@@ -73,7 +73,7 @@ ShvUtilConvertGdtEntry (
                          (gdtEntry->BaseLow)) & 0xFFFFFFFF;
     VmxGdtEntry->Base |= ((gdtEntry->Bits.Type & 0x10) == 0) ?
                          ((uintptr_t)gdtEntry->BaseUpper << 32) : 0;
-
+	
     //
     // Load the access rights
     //

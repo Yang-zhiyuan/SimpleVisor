@@ -184,7 +184,7 @@ ShvVmxEnterRootModeOnVp (
     //
     // Ensure the the VMCS can fit into a single page
     //
-    if (((VpData->MsrData[0].QuadPart & VMX_BASIC_VMCS_SIZE_MASK) >> 32) > PAGE_SIZE)
+    if (((VpData->MsrData[MSR_IA32_VMX_BASIC_INDEX].QuadPart & VMX_BASIC_VMCS_SIZE_MASK) >> 32) > PAGE_SIZE)
     {
         return FALSE;
     }
@@ -192,7 +192,7 @@ ShvVmxEnterRootModeOnVp (
     //
     // Ensure that the VMCS is supported in writeback memory
     //
-    if (((VpData->MsrData[0].QuadPart & VMX_BASIC_MEMORY_TYPE_MASK) >> 50) != MTRR_TYPE_WB)
+    if (((VpData->MsrData[MSR_IA32_VMX_BASIC_INDEX].QuadPart & VMX_BASIC_MEMORY_TYPE_MASK) >> 50) != MTRR_TYPE_WB)
     {
         return FALSE;
     }
@@ -200,7 +200,7 @@ ShvVmxEnterRootModeOnVp (
     //
     // Ensure that true MSRs can be used for capabilities
     //
-    if (((VpData->MsrData[0].QuadPart) & VMX_BASIC_DEFAULT1_ZERO) == 0)
+    if (((VpData->MsrData[MSR_IA32_VMX_BASIC_INDEX].QuadPart) & VMX_BASIC_DEFAULT1_ZERO) == 0)
     {
         return FALSE;
     }
@@ -208,9 +208,9 @@ ShvVmxEnterRootModeOnVp (
     //
     // Ensure that EPT is available with the needed features SimpleVisor uses
     //
-    if (((VpData->MsrData[12].QuadPart & VMX_EPT_PAGE_WALK_4_BIT) != 0) &&
-        ((VpData->MsrData[12].QuadPart & VMX_EPTP_WB_BIT) != 0) &&
-        ((VpData->MsrData[12].QuadPart & VMX_EPT_2MB_PAGE_BIT) != 0))
+    if (((VpData->MsrData[MSR_IA32_VMX_EPT_VPID_CAP_INDEX].QuadPart & VMX_EPT_PAGE_WALK_4_BIT) != 0) &&
+        ((VpData->MsrData[MSR_IA32_VMX_EPT_VPID_CAP_INDEX].QuadPart & VMX_EPTP_WB_BIT) != 0) &&
+        ((VpData->MsrData[MSR_IA32_VMX_EPT_VPID_CAP_INDEX].QuadPart & VMX_EPT_2MB_PAGE_BIT) != 0))
     {
         //
         // Enable EPT if these features are supported
@@ -221,8 +221,8 @@ ShvVmxEnterRootModeOnVp (
     //
     // Capture the revision ID for the VMXON and VMCS region
     //
-    VpData->VmxOn.RevisionId = VpData->MsrData[0].LowPart;
-    VpData->Vmcs.RevisionId = VpData->MsrData[0].LowPart;
+    VpData->VmxOn.RevisionId = VpData->MsrData[MSR_IA32_VMX_BASIC_INDEX].LowPart;
+    VpData->Vmcs.RevisionId = VpData->MsrData[MSR_IA32_VMX_BASIC_INDEX].LowPart;
 
     //
     // Store the physical addresses of all per-LP structures allocated
@@ -232,18 +232,20 @@ ShvVmxEnterRootModeOnVp (
     VpData->MsrBitmapPhysicalAddress = ShvOsGetPhysicalAddress(VpData->MsrBitmap);
     VpData->EptPml4PhysicalAddress = ShvOsGetPhysicalAddress(&VpData->Epml4);
 
+    // todo 暴力置位, 强行设置cr0和cr4, 直接把VMX需要的位从msr中拿出来, 然后设置到了相应的寄存器
     //
     // Update CR0 with the must-be-zero and must-be-one requirements
     //
-    Registers->Cr0 &= VpData->MsrData[7].LowPart;
-    Registers->Cr0 |= VpData->MsrData[6].LowPart;
-
+    Registers->Cr0 &= VpData->MsrData[MSR_IA32_VMX_CR0_FIXED1_INDEX].LowPart;
+    Registers->Cr0 |= VpData->MsrData[MSR_IA32_VMX_CR0_FIXED0_INDEX].LowPart;
     //
     // Do the same for CR4
     //
-    Registers->Cr4 &= VpData->MsrData[9].LowPart;
-    Registers->Cr4 |= VpData->MsrData[8].LowPart;
+    Registers->Cr4 &= VpData->MsrData[MSR_IA32_VMX_CR4_FIXED1_INDEX].LowPart;
+    Registers->Cr4 |= VpData->MsrData[MSR_IA32_VMX_CR4_FIXED0_INDEX].LowPart;
 
+
+	// todo 因为上面已经置位了, 这里相当于把VMXE也设置好了
     //
     // Update host CR0 and CR4 based on the requirements above
     //
@@ -287,11 +289,15 @@ ShvVmxSetupVmcsForVp (
     _In_ PSHV_VP_DATA VpData
     )
 {
-    PSHV_SPECIAL_REGISTERS state = &VpData->SpecialRegisters;
-    PCONTEXT context = &VpData->ContextFrame;
+    PSHV_SPECIAL_REGISTERS state = &VpData->SpecialRegisters;   // 在ShvCaptureSpecialRegisters函数内赋值
+    PCONTEXT context = &VpData->ContextFrame;                   // 在ShvOsCaptureContext函数内赋值
     VMX_GDTENTRY64 vmxGdtEntry;
     VMX_EPTP vmxEptp;
 
+	// todo intel manual:
+	// If the “VMCS shadowing” VM-execution control is 1, the VMREAD and VMWRITE
+    // instructions access the VMCS referenced by this pointer(see Section 24.10).Otherwise, software should set
+    // this field to FFFFFFFF_FFFFFFFFH to avoid VM - entry failures(see Section 26.3.1.5).
     //
     // Begin by setting the link pointer to the required value for 4KB VMCS.
     //
@@ -337,7 +343,7 @@ ShvVmxSetupVmcsForVp (
     // memory access efficiently.
     //
     __vmx_vmwrite(SECONDARY_VM_EXEC_CONTROL,
-                           ShvUtilAdjustMsr(VpData->MsrData[11],
+                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_PROCBASED_CTLS2_INDEX],
                                             SECONDARY_EXEC_ENABLE_RDTSCP |
                                             SECONDARY_EXEC_ENABLE_INVPCID |
                                             SECONDARY_EXEC_XSAVES |
@@ -348,7 +354,7 @@ ShvVmxSetupVmcsForVp (
     // the processor. Use ShvUtilAdjustMsr to add those in.
     //
     __vmx_vmwrite(PIN_BASED_VM_EXEC_CONTROL,
-                           ShvUtilAdjustMsr(VpData->MsrData[13], 0));
+                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_PINBASED_CTLS_INDEX], 0));
 
     //
     // In order for our choice of supporting RDTSCP and XSAVE/RESTORES above to
@@ -356,7 +362,7 @@ ShvVmxSetupVmcsForVp (
     // want to activate the MSR bitmap in order to keep them from being caught.
     //
     __vmx_vmwrite(CPU_BASED_VM_EXEC_CONTROL,
-                           ShvUtilAdjustMsr(VpData->MsrData[14],
+                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_PROCBASED_CTLS_INDEX],
                                             CPU_BASED_ACTIVATE_MSR_BITMAP |
                                             CPU_BASED_ACTIVATE_SECONDARY_CONTROLS));
 
@@ -364,14 +370,14 @@ ShvVmxSetupVmcsForVp (
     // Make sure to enter us in x64 mode at all times.
     //
     __vmx_vmwrite(VM_EXIT_CONTROLS,
-                           ShvUtilAdjustMsr(VpData->MsrData[15],
+                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_EXIT_CTLS_INDEX],
                                             VM_EXIT_IA32E_MODE));
 
     //
     // As we exit back into the guest, make sure to exist in x64 mode as well.
     //
     __vmx_vmwrite(VM_ENTRY_CONTROLS,
-                           ShvUtilAdjustMsr(VpData->MsrData[16],
+                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_ENTRY_CTLS_INDEX],
                                             VM_ENTRY_IA32E_MODE));
 
     //
@@ -573,6 +579,7 @@ ShvVmxLaunchOnVp (
 
     //
     // Initialize all the VMX-related MSRs by reading their value
+    // 读取所有VMX的msr寄存器
     //
     for (i = 0; i < sizeof(VpData->MsrData) / sizeof(VpData->MsrData[0]); i++)
     {
@@ -580,7 +587,7 @@ ShvVmxLaunchOnVp (
     }
 
     //
-    // Initialize all the MTRR-related MSRs by reading their value and build
+    // Initialize all the MTRR(memory type region register内存类型寄存器)-related MSRs by reading their value and build
     // range structures to describe their settings
     //
     ShvVmxMtrrInitialize(VpData);
@@ -590,6 +597,7 @@ ShvVmxLaunchOnVp (
     //
     ShvVmxEptInitialize(VpData);
 
+    // todo 填充vmxon区域
     //
     // Attempt to enter VMX root mode on this processor.
     //
@@ -601,6 +609,7 @@ ShvVmxLaunchOnVp (
         return SHV_STATUS_NOT_AVAILABLE;
     }
 
+    // todo 填充vscs区域
     //
     // Initialize the VMCS, both guest and host state.
     //

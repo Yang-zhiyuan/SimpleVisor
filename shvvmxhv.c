@@ -270,7 +270,7 @@ ShvVmxEntryHandler (
     // Did we hit the magic exit sequence, or should we resume back to the VM
     // context?
     //
-    if (guestContext.ExitVm != FALSE)
+    if (guestContext.ExitVm)
     {
         //
         // Return the VP Data structure in RAX:RBX which is going to be part of

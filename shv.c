@@ -50,6 +50,7 @@ ShvLoad (
 {
     SHV_CALLBACK_CONTEXT callbackContext;
 
+	// todo 通过KeGenericCallDpc设置每个cpu指令
     //
     // Attempt to enter VMX root mode on all logical processors. This will
     // broadcast a DPC interrupt which will execute the callback routine in

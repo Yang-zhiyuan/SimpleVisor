@@ -128,6 +128,7 @@ ShvVpInitialize (
     // Read the special control registers for this processor
     // Note: KeSaveStateForHibernate(&Data->HostState) can be used as a Windows
     // specific undocumented function that can also get this data.
+    // 保存特殊寄存器
     //
     ShvCaptureSpecialRegisters(&Data->SpecialRegisters);
 
@@ -138,6 +139,7 @@ ShvVpInitialize (
     // to whatever value they were deep inside the VMCS/VMX initialization code.
     // By using RtlRestoreContext, that function sets the AC flag in EFLAGS and
     // returns here with our registers restored.
+    // 保存通用寄存器
     //
     ShvOsCaptureContext(&Data->ContextFrame);
     if ((__readeflags() & EFLAGS_ALIGN_CHECK) == 0)
@@ -145,6 +147,7 @@ ShvVpInitialize (
         //
         // If the AC bit is not set in EFLAGS, it means that we have not yet
         // launched the VM. Attempt to initialize VMX on this processor.
+        // 启动虚拟机
         //
         status = ShvVmxLaunchOnVp(Data);
     }
@@ -226,11 +229,13 @@ ShvVpLoadCallback (
     _In_ PSHV_CALLBACK_CONTEXT Context
     )
 {
+	// 每个cpu都执行的回调, 准备侵染cpu
     PSHV_VP_DATA vpData;
     INT32 status;
 
     vpData = NULL;
 
+	// todo 检查cpu是否支持vt
     //
     // Detect if the hardware appears to support VMX root mode to start.
     // No attempts are made to enable this if it is lacking or disabled.
@@ -241,6 +246,7 @@ ShvVpLoadCallback (
         goto Failure;
     }
 
+    // todo 为每个cpu申请需要的非分页内存
     //
     // Allocate the per-VP data for this logical processor
     //
