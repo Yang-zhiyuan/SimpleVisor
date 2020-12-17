@@ -45,7 +45,7 @@ include ksamd64.inc
     LEAF_END __lgdt, _TEXT$00
     
     LEAF_ENTRY ShvOsRestoreContext2, _TEXT$00
-        movaps  xmm0, CxXmm0[rcx]   ;
+        movaps  xmm0, CxXmm0[rcx]   ; CxXXXX这种应该是一个汇编宏, 宏内部计算了CONTEXT的偏移
         movaps  xmm1, CxXmm1[rcx]   ;
         movaps  xmm2, CxXmm2[rcx]   ;
         movaps  xmm3, CxXmm3[rcx]   ;

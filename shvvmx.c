@@ -615,6 +615,7 @@ ShvVmxLaunchOnVp (
     //
     ShvVmxSetupVmcsForVp(VpData);
 
+	// todo 函数内部执行完__vmx_vmlaunch后, 系统就进入guest模式了, 这个函数恢复了之前guest的状态
     //
     // Launch the VMCS, based on the guest data that was loaded into the
     // various VMCS fields by ShvVmxSetupVmcsForVp. This will cause the

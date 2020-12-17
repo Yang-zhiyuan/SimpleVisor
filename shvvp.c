@@ -29,32 +29,41 @@ ShvIsOurHypervisorPresent (
     VOID
     )
 {
-    INT32 cpuInfo[4];
-
-    //
-    // Check if ECX[31h] ("Hypervisor Present Bit") is set in CPUID 1h
-    //
-    __cpuid(cpuInfo, 1);
-    if (cpuInfo[2] & HYPERV_HYPERVISOR_PRESENT_BIT)
+    ULONGLONG cr4 = __readcr4();
+    // VMXE位 如果已经安装了VT, 则这个位会被置1
+    if (cr4 & (1 << 13))
     {
-        //
-        // Next, check if this is a compatible Hypervisor, and if it has the
-        // SimpleVisor signature
-        //
-        __cpuid(cpuInfo, HYPERV_CPUID_INTERFACE);
-        if (cpuInfo[0] == ' vhS')
-        {
-            //
-            // It's us!
-            //
-            return TRUE;
-        }
+        return TRUE;
     }
 
-    //
-    // No Hypervisor, or someone else's
-    //
     return FALSE;
+	
+    //INT32 cpuInfo[4];
+
+    ////
+    //// Check if ECX[31h] ("Hypervisor Present Bit") is set in CPUID 1h
+    ////
+    //__cpuid(cpuInfo, 1);
+    //if (cpuInfo[2] & HYPERV_HYPERVISOR_PRESENT_BIT)
+    //{
+    //    //
+    //    // Next, check if this is a compatible Hypervisor, and if it has the
+    //    // SimpleVisor signature
+    //    //
+    //    __cpuid(cpuInfo, HYPERV_CPUID_INTERFACE);
+    //    if (cpuInfo[0] == ' vhS')
+    //    {
+    //        //
+    //        // It's us!
+    //        //
+    //        return TRUE;
+    //    }
+    //}
+
+    ////
+    //// No Hypervisor, or someone else's
+    ////
+    //return FALSE;
 }
 
 VOID
@@ -88,7 +97,7 @@ ShvVpRestoreAfterLaunch (
     )
 {
     PSHV_VP_DATA vpData;
-
+    
     //
     // Get the per-processor data. This routine temporarily executes on the
     // same stack as the hypervisor (using no real stack space except the home
@@ -97,13 +106,13 @@ ShvVpRestoreAfterLaunch (
     vpData = (PSHV_VP_DATA)((uintptr_t)_AddressOfReturnAddress() +
                             sizeof(CONTEXT) -
                             KERNEL_STACK_SIZE);
-
     //
     // Record that VMX is now enabled by returning back to ShvVpInitialize with
     // the Alignment Check (AC) bit set.
     //
     vpData->ContextFrame.EFlags |= EFLAGS_ALIGN_CHECK;
 
+    DbgPrint("%p", vpData->ContextFrame.Rip);
     //
     // And finally, restore the context, so that all register and stack
     // state is finally restored.
@@ -127,13 +136,16 @@ ShvVpInitialize (
         return status;
     }
 
+	// todo 保存特殊寄存器
     // Read the special control registers for this processor
     // Note: KeSaveStateForHibernate(&Data->HostState) can be used as a Windows
     // specific undocumented function that can also get this data.
-    // 保存特殊寄存器
     //
     ShvCaptureSpecialRegisters(&Data->SpecialRegisters);
 
+	// todo 保存通用寄存器, 这里要注意, 最后vmlunch后, 还会调用到这里, 因为是在这里获取的rip
+    // todo 这里用一个flag置位来表示是否已经被初始化过了
+    // todo 优化点, 可以使用其他方法, 让rip改到下面去
     //
     // Then, capture the entire register state. We will need this, as once we
     // launch the VM, it will begin execution at the defined guest instruction
@@ -141,19 +153,18 @@ ShvVpInitialize (
     // to whatever value they were deep inside the VMCS/VMX initialization code.
     // By using RtlRestoreContext, that function sets the AC flag in EFLAGS and
     // returns here with our registers restored.
-    // 保存通用寄存器
     //
     ShvOsCaptureContext(&Data->ContextFrame);
-    if ((__readeflags() & EFLAGS_ALIGN_CHECK) == 0)
+    if ((__readeflags() & EFLAGS_ALIGN_CHECK) == 0) // todo 以下代码由guest来执行了
     {
+    	// todo 启动虚拟机
         //
         // If the AC bit is not set in EFLAGS, it means that we have not yet
         // launched the VM. Attempt to initialize VMX on this processor.
-        // 启动虚拟机
         //
         status = ShvVmxLaunchOnVp(Data);
     }
-
+    
     //
     // If we got here, the hypervisor is running :-)
     //
@@ -266,6 +277,7 @@ ShvVpLoadCallback (
     //
     vpData->SystemDirectoryTableBase = Context->Cr3;
 
+	// todo 初始化vt(VMXON, VMCS填充, VMLAUNCH)
     //
     // Initialize the virtual processor
     //
@@ -278,6 +290,8 @@ ShvVpLoadCallback (
         goto Failure;
     }
 
+	// todo 通过cpuid指令来判断是否已经安装我们自己的vt, 应该判断vt是否已经安装, 如果有其他vt安装就返回失败
+    // todo 这里已经修改为通过CPUID.1.VEXE标志位来判断了
     //
     // Our hypervisor should now be seen as present on this LP, as the SHV
     // correctly handles CPUID ECX features register.
@@ -295,7 +309,6 @@ ShvVpLoadCallback (
     // This CPU is hyperjacked!
     //
     _InterlockedIncrement((volatile long*)&Context->InitCount);
-    DbgPrint("[yzy] current cpu index %d", KeGetCurrentProcessorIndex());
     return;
 
 Failure:
