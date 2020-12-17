@@ -29,8 +29,14 @@ Environment:
 #endif
 #define _INC_MALLOC
 #include <intrin.h>
-#include "ntint.h"
+#include <ntifs.h>
 #include "shv_x.h"
+
+
+#define DECLSPEC_ALIGN(x)   __declspec(align(x))
+#define DECLSPEC_NORETURN   __declspec(noreturn)
+#define FORCEINLINE         __forceinline
+#define C_ASSERT(x)         static_assert(x, "Error")
 
 typedef struct _SHV_VP_STATE
 {

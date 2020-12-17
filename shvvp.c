@@ -20,7 +20,9 @@ Environment:
 
 --*/
 
+
 #include "shv.h"
+
 
 UINT8
 ShvIsOurHypervisorPresent (
@@ -293,6 +295,7 @@ ShvVpLoadCallback (
     // This CPU is hyperjacked!
     //
     _InterlockedIncrement((volatile long*)&Context->InitCount);
+    DbgPrint("[yzy] current cpu index %d", KeGetCurrentProcessorIndex());
     return;
 
 Failure:
