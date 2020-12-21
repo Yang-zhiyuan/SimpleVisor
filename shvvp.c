@@ -97,7 +97,7 @@ ShvVpRestoreAfterLaunch (
     )
 {
     PSHV_VP_DATA vpData;
-    
+	
     //
     // Get the per-processor data. This routine temporarily executes on the
     // same stack as the hypervisor (using no real stack space except the home
@@ -111,8 +111,7 @@ ShvVpRestoreAfterLaunch (
     // the Alignment Check (AC) bit set.
     //
     vpData->ContextFrame.EFlags |= EFLAGS_ALIGN_CHECK;
-
-    DbgPrint("%p", vpData->ContextFrame.Rip);
+	
     //
     // And finally, restore the context, so that all register and stack
     // state is finally restored.

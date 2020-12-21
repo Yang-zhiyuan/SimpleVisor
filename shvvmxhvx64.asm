@@ -26,6 +26,7 @@
     extern ShvOsCaptureContext:proc
 
     ShvVmxEntry PROC
+    ; 保存rcx寄存器到堆栈
     push    rcx                 ; save the RCX register, which we spill below
     lea     rcx, [rsp+8h]       ; store the context in the stack, bias for
                                 ; the return address and the push we just did.
@@ -38,6 +39,7 @@
     jmp     ShvVmxEntryHandler  ; jump to the C code handler. we assume that it
                                 ; compiled with optimizations and does not use
                                 ; home space, which is true of release builds.
+    ; 跳到ShvVmxEntryHandler函数内部后从栈中恢复rcx寄存器
     ShvVmxEntry ENDP
 
     end

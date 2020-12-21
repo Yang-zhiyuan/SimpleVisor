@@ -479,7 +479,7 @@ ShvVmxSetupVmcsForVp (
     //
     // Load CR0
     //
-    __vmx_vmwrite(CR0_READ_SHADOW, state->Cr0);
+    __vmx_vmwrite(CR0_READ_SHADOW, state->Cr0); // todo 如果设置了, guest在读取cr0的时候就是这个值
     __vmx_vmwrite(HOST_CR0, state->Cr0);
     __vmx_vmwrite(GUEST_CR0, state->Cr0);
 
@@ -509,6 +509,7 @@ ShvVmxSetupVmcsForVp (
     // corresponds exactly to the location where RtlCaptureContext will return
     // to inside of ShvVpInitialize.
     //
+	// todo 因为VpData的ShvStackLimit栈大小中CONTEXT在一个联合中, 所以, 减掉context大小就是为了数据不被破坏
     __vmx_vmwrite(GUEST_RSP, (uintptr_t)VpData->ShvStackLimit + KERNEL_STACK_SIZE - sizeof(CONTEXT));
     __vmx_vmwrite(GUEST_RIP, (uintptr_t)ShvVpRestoreAfterLaunch);
     __vmx_vmwrite(GUEST_RFLAGS, context->EFlags);
@@ -523,6 +524,7 @@ ShvVmxSetupVmcsForVp (
     // the ones that RtlCaptureContext will perform.
     //
     C_ASSERT((KERNEL_STACK_SIZE - sizeof(CONTEXT)) % 16 == 0);
+	// todo 栈地址 - 栈大小 = 设置的是高地址, 栈是从高地址向低地址写入
     __vmx_vmwrite(HOST_RSP, (uintptr_t)VpData->ShvStackLimit + KERNEL_STACK_SIZE - sizeof(CONTEXT));
     __vmx_vmwrite(HOST_RIP, (uintptr_t)ShvVmxEntry);
 }
