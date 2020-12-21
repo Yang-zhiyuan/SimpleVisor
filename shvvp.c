@@ -242,10 +242,9 @@ ShvVpLoadCallback (
     )
 {
 	// 每个cpu都执行的回调, 准备侵染cpu
-    PSHV_VP_DATA vpData;
+    PSHV_VP_DATA vpData = NULL;
     INT32 status;
 
-    vpData = NULL;
 
 	// todo 检查cpu是否支持vt
     //
@@ -318,7 +317,7 @@ Failure:
     {
         ShvVpFreeData(vpData, 1);
     }
-    Context->FailedCpu = ShvOsGetCurrentProcessorNumber();
+    Context->FailedCpu = (INT32)KeGetCurrentProcessorNumberEx(NULL);
     Context->FailureStatus = status;
     return;
 }

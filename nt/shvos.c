@@ -23,37 +23,12 @@ Environment:
 #include <intrin.h>
 #include <ntifs.h>
 #include <stdarg.h>
+#include "../ddk.h"
+#include "../shv.h"
 #include "..\shv_x.h"
 #pragma warning(disable:4221)
 #pragma warning(disable:4204)
 
-NTKERNELAPI
-_IRQL_requires_max_(APC_LEVEL)
-_IRQL_requires_min_(PASSIVE_LEVEL)
-_IRQL_requires_same_
-VOID
-KeGenericCallDpc (
-    _In_ PKDEFERRED_ROUTINE Routine,
-    _In_opt_ PVOID Context
-    );
-
-NTKERNELAPI
-_IRQL_requires_(DISPATCH_LEVEL)
-_IRQL_requires_same_
-VOID
-KeSignalCallDpcDone (
-    _In_ PVOID SystemArgument1
-    );
-
-NTKERNELAPI
-_IRQL_requires_(DISPATCH_LEVEL)
-_IRQL_requires_same_
-LOGICAL
-KeSignalCallDpcSynchronize (
-    _In_ PVOID SystemArgument2
-    );
-
-DRIVER_INITIALIZE DriverEntry;
 
 DECLSPEC_NORETURN
 VOID
@@ -78,7 +53,6 @@ typedef struct _SHV_DPC_CONTEXT
 #define KGDT64_R3_DATA      0x28
 #define KGDT64_R3_CMTEB     0x50
 
-PVOID g_PowerCallbackRegistration;
 
 NTSTATUS
 FORCEINLINE
@@ -91,14 +65,17 @@ ShvOsErrorToError (
     //
     if (Error == SHV_STATUS_NOT_AVAILABLE)
     {
+        DBG_PRINT("STATUS_HV_FEATURE_UNAVAILABLE");
         return STATUS_HV_FEATURE_UNAVAILABLE;
     }
     if (Error == SHV_STATUS_NO_RESOURCES)
     {
+        DBG_PRINT("STATUS_HV_NO_RESOURCES");
         return STATUS_HV_NO_RESOURCES;
     }
     if (Error == SHV_STATUS_NOT_PRESENT)
     {
+        DBG_PRINT("STATUS_HV_NOT_PRESENT");
         return STATUS_HV_NOT_PRESENT;
     }
     if (Error == SHV_STATUS_SUCCESS)
@@ -106,6 +83,7 @@ ShvOsErrorToError (
         return STATUS_SUCCESS;
     }
 
+    DBG_PRINT("STATUS_UNSUCCESSFUL");
     //
     // Unknown/unexpected error
     //
@@ -148,6 +126,7 @@ ShvOsDpcRoutine (
     //
     // Thus, set the segments to their correct value, one more time, as a fix.
     //
+	// todo 是由什么东西导致的必须要修复?
     ShvVmxCleanup(KGDT64_R3_DATA | RPL_MASK, KGDT64_R3_CMTEB | RPL_MASK);
 
     //
@@ -192,7 +171,8 @@ ShvOsUnprepareProcessor (
 
 VOID
 ShvOsFreeContiguousAlignedMemory (
-    _In_ PVOID BaseAddress
+    _In_ PVOID BaseAddress,
+    _In_ size_t Size
     )
 {
     //
@@ -253,6 +233,7 @@ ShvOsRunCallbackOnProcessors (
     KeGenericCallDpc(ShvOsDpcRoutine, &dpcContext);
 }
 
+// 还原寄存器
 VOID
 ShvOsRestoreContext(
     _In_ PCONTEXT ContextRecord
@@ -261,54 +242,21 @@ ShvOsRestoreContext(
     ShvOsRestoreContext2(ContextRecord, NULL);
 }
 
+// 获取当前寄存器
 VOID
 ShvOsCaptureContext (
     _In_ PCONTEXT ContextRecord
     )
 {
+	// todo 如果是无优化编译, 这里的rip会导致vm卡死
+    
     //
     // Windows provides a nice OS function to do this
     //
     RtlCaptureContext(ContextRecord);
 }
 
-INT32
-ShvOsGetCurrentProcessorNumber (
-    VOID
-    )
-{
-    //
-    // Get the group-wide CPU index
-    //
-    return (INT32)KeGetCurrentProcessorNumberEx(NULL);
-}
 
-INT32
-ShvOsGetActiveProcessorCount (
-    VOID
-    )
-{
-    //
-    // Get the group-wide CPU count
-    //
-    return (INT32)KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
-}
-
-VOID
-ShvOsDebugPrint (
-    _In_ PCCH Format,
-    ...
-    )
-{
-    va_list arglist;
-
-    //
-    // Call the debugger API
-    //
-    va_start(arglist, Format);
-    vDbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, Format, arglist);
-    va_end(arglist);
-}
 
 VOID
 DriverUnload (
@@ -316,13 +264,25 @@ DriverUnload (
     )
 {
     UNREFERENCED_PARAMETER(DriverObject);
+	
 
     //
-    // Unload the hypervisor
+    // Attempt to exit VMX root mode on all logical processors. This will
+    // broadcast an interrupt which will execute the callback routine in
+    // parallel on the LPs.
     //
-    ShvUnload();
+    // Note that if SHV is not loaded on any of the LPs, this routine will not
+    // perform any work, but will not fail in any way.
+    //
+    ShvOsRunCallbackOnProcessors(ShvVpUnloadCallback, NULL);
+
+    //
+    // Indicate unload
+    //
+    DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "The SHV has been uninstalled.\n");
 }
 
+EXTERN_C
 NTSTATUS
 DriverEntry (
     _In_ PDRIVER_OBJECT DriverObject,
@@ -336,11 +296,43 @@ DriverEntry (
     ////
     DriverObject->DriverUnload = DriverUnload;
 
+	
+    // todo 通过KeGenericCallDpc设置每个cpu指令
+    SHV_CALLBACK_CONTEXT callbackContext;
     //
-    // Load the hypervisor
+    // Attempt to enter VMX root mode on all logical processors. This will
+    // broadcast a DPC interrupt which will execute the callback routine in
+    // parallel on the LPs. Send the callback routine the physical address of
+    // the PML4 of the system process, which is what this driver entrypoint
+    // should be executing in.
     //
-    status = ShvOsErrorToError(ShvLoad());
+    callbackContext.Cr3 = __readcr3();
+    callbackContext.FailureStatus = SHV_STATUS_SUCCESS;
+    callbackContext.FailedCpu = -1;
+    callbackContext.InitCount = 0;
+    ShvOsRunCallbackOnProcessors(ShvVpLoadCallback, &callbackContext);
+
+	// todo 查询初始化的cpu数量与机器的cpu数量是否相等
+    //
+    // Check if all LPs are now hypervised. Return the failure code of at least
+    // one of them. 
+    //
+    // Note that each VP is responsible for freeing its VP data on failure.
+    //
+    if (callbackContext.InitCount != (INT32)KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS))
+    {
+        DBG_PRINT("The SHV failed to initialize (0x%lX) Failed CPU: %d\n", 
+            callbackContext.FailureStatus, callbackContext.FailedCpu);
+    	
+        status = callbackContext.FailureStatus;
+    }
+    else
+    {
+        DBG_PRINT("The SHV has been installed.\n");
+        status = SHV_STATUS_SUCCESS;
+    }
+	
+    status = ShvOsErrorToError(status);
 
     return status;
 }
-

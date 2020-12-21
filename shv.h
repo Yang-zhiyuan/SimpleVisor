@@ -56,8 +56,16 @@ typedef struct _SHV_CALLBACK_CONTEXT
     INT32 FailureStatus;
 } SHV_CALLBACK_CONTEXT, *PSHV_CALLBACK_CONTEXT;
 
-SHV_CPU_CALLBACK ShvVpLoadCallback;
-SHV_CPU_CALLBACK ShvVpUnloadCallback;
+//SHV_CPU_CALLBACK ShvVpLoadCallback;
+//SHV_CPU_CALLBACK ShvVpUnloadCallback;
+
+VOID
+ShvVpLoadCallback(
+    _In_ PSHV_CALLBACK_CONTEXT Context);
+VOID
+ShvVpUnloadCallback(
+    _In_ PSHV_CALLBACK_CONTEXT Context);
+
 
 VOID
 ShvVmxEntry (
