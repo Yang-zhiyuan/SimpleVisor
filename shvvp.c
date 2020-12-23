@@ -90,35 +90,6 @@ ShvCaptureSpecialRegisters (
     _sldt(&SpecialRegisters->Ldtr);
 }
 
-DECLSPEC_NORETURN
-VOID
-ShvVpRestoreAfterLaunch (
-    VOID
-    )
-{
-    PSHV_VP_DATA vpData;
-	
-    //
-    // Get the per-processor data. This routine temporarily executes on the
-    // same stack as the hypervisor (using no real stack space except the home
-    // registers), so we can retrieve the VP the same way the hypervisor does.
-    //
-    vpData = (PSHV_VP_DATA)((uintptr_t)_AddressOfReturnAddress() +
-                            sizeof(CONTEXT) -
-                            KERNEL_STACK_SIZE);
-    //
-    // Record that VMX is now enabled by returning back to ShvVpInitialize with
-    // the Alignment Check (AC) bit set.
-    //
-    vpData->ContextFrame.EFlags |= EFLAGS_ALIGN_CHECK;
-	
-    //
-    // And finally, restore the context, so that all register and stack
-    // state is finally restored.
-    //
-    ShvOsRestoreContext(&vpData->ContextFrame);
-}
-
 NTSTATUS asm_vmx_launch(_In_ PSHV_VP_DATA Data);
 
 INT32
@@ -144,30 +115,8 @@ ShvVpInitialize (
     //
     ShvCaptureSpecialRegisters(&Data->SpecialRegisters);
 
-	// todo 保存通用寄存器, 这里要注意, 最后vmlunch后, 还会调用到这里, 因为是在这里获取的rip
-    // todo 这里用一个flag置位来表示是否已经被初始化过了
-    // todo 优化点, 可以使用其他方法, 让rip改到下面去
-    //
-    // Then, capture the entire register state. We will need this, as once we
-    // launch the VM, it will begin execution at the defined guest instruction
-    // pointer, which we set to ShvVpRestoreAfterLaunch, with the registers set
-    // to whatever value they were deep inside the VMCS/VMX initialization code.
-    // By using RtlRestoreContext, that function sets the AC flag in EFLAGS and
-    // returns here with our registers restored.
-    //
-    //ShvOsCaptureContext(&Data->ContextFrame);
-    if ((__readeflags() & EFLAGS_ALIGN_CHECK) == 0) // todo 以下代码由guest来执行了
-    {
-    	// todo 启动虚拟机
-        //
-        // If the AC bit is not set in EFLAGS, it means that we have not yet
-        // launched the VM. Attempt to initialize VMX on this processor.
-        //
-        //status = ShvVmxLaunchOnVp(Data);
-    	
-    	// 通过汇编设置栈和执行地址
-        status = asm_vmx_launch(Data);
-    }
+	// guest启动还原点在这个汇编函数中
+    status = asm_vmx_launch(Data);
     
     //
     // If we got here, the hypervisor is running :-)

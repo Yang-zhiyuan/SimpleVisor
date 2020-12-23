@@ -117,11 +117,6 @@ ShvVmxEptInitialize (
     _In_ PSHV_VP_DATA VpData
     );
 
-DECLSPEC_NORETURN
-VOID
-ShvVpRestoreAfterLaunch (
-    VOID
-    );
 
 //
 // OS Layer
