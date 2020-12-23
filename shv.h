@@ -62,7 +62,8 @@ typedef struct _SHV_CALLBACK_CONTEXT
 NTSTATUS
 ShvVpLoadCallback(
     _In_ PSHV_CALLBACK_CONTEXT Context);
-VOID
+
+NTSTATUS
 ShvVpUnloadCallback(
     _In_ PSHV_CALLBACK_CONTEXT Context);
 
@@ -178,12 +179,6 @@ ShvOsDebugPrintWide (
     );
 #define ShvOsDebugPrint(format, ...) ShvOsDebugPrintWide(_CRT_WIDE(format), __VA_ARGS__)
 #endif
-
-VOID
-ShvOsRunCallbackOnProcessors (
-    _In_ PSHV_CPU_CALLBACK Routine,
-    _In_opt_ VOID* Context
-    );
 
 extern PSHV_VP_DATA* ShvGlobalData;
 

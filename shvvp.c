@@ -115,7 +115,8 @@ ShvVpInitialize (
     RtlCaptureContext(&Data->ContextFrame);
 	
 	// guest启动还原点在这个汇编函数中
-    status = asm_vmx_launch(Data);
+    status = asm_vmx_launch(Data); // inside call ShvVmxLaunchOnVp
+	
     
     //
     // If we got here, the hypervisor is running :-)
@@ -123,7 +124,7 @@ ShvVpInitialize (
     return status;
 }
 
-VOID
+NTSTATUS
 ShvVpUnloadCallback (
     _In_ PSHV_CALLBACK_CONTEXT Context
     )
@@ -150,6 +151,8 @@ ShvVpUnloadCallback (
         vpData = (PSHV_VP_DATA)((UINT64)cpuInfo[0] << 32 | (UINT32)cpuInfo[1]);
         ShvOsFreeContiguousAlignedMemory(vpData, sizeof(*vpData));
     }
+
+    return STATUS_SUCCESS;
 }
 
 PSHV_VP_DATA

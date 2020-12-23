@@ -233,6 +233,8 @@ ShvVmxEntryHandler (
     _In_ PCONTEXT Context
     )
 {
+
+	
     SHV_VP_STATE guestContext;
     PSHV_VP_DATA vpData;
 
@@ -265,6 +267,7 @@ ShvVmxEntryHandler (
     // Call the generic handler
     //
     ShvVmxHandleExit(&guestContext);
+
 
     //
     // Did we hit the magic exit sequence, or should we resume back to the VM
@@ -306,7 +309,7 @@ ShvVmxEntryHandler (
         Context->Rsp = guestContext.GuestRsp;
         Context->Rip = (UINT64)guestContext.GuestRip;
         Context->EFlags = (UINT32)guestContext.GuestEFlags;
-
+    	
         //
         // Turn off VMX root mode on this logical processor. We're done here.
         //
@@ -322,7 +325,7 @@ ShvVmxEntryHandler (
         // here.
         //
         Context->Rsp += sizeof(Context->Rcx);
-
+    	
         //
         // Return into a VMXRESUME intrinsic, which we broke out as its own
         // function, in order to allow this to work. No assembly code will be

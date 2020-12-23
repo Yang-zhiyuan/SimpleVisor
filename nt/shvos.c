@@ -91,56 +91,6 @@ ShvOsErrorToError (
 }
 
 VOID
-ShvOsDpcRoutine (
-    _In_ struct _KDPC *Dpc,
-    _In_opt_ PVOID DeferredContext,
-    _In_opt_ PVOID SystemArgument1,
-    _In_opt_ PVOID SystemArgument2
-    )
-{
-    PSHV_DPC_CONTEXT dpcContext = DeferredContext;
-    UNREFERENCED_PARAMETER(Dpc);
-
-    __analysis_assume(DeferredContext != NULL);
-    __analysis_assume(SystemArgument1 != NULL);
-    __analysis_assume(SystemArgument2 != NULL);
-
-    //
-    // Execute the internal callback function
-    //
-    dpcContext->Routine(dpcContext->Context);
-
-    //
-    // During unload SimpleVisor uses the RtlRestoreContext function which will
-    // unfortunately use the "iretq" opcode in order to restore execution back.
-    // This causes the processor to remove the RPL bits off the segments. As
-    // the x64 kernel does not expect kernel-mode code to change the value of
-    // any segments, this results in the DS and ES segments being stuck 0x20,
-    // and the FS segment being stuck at 0x50, until the next context switch.
-    //
-    // If the DPC happened to have interrupted either the idle thread or system
-    // thread, that's perfectly fine (albeit unusual). If the DPC interrupted a
-    // 64-bit long-mode thread, that's also fine. However if the DPC interrupts
-    // a thread in compatibility-mode, running as part of WoW64, it will hit a
-    // GPF instantaneously and crash.
-    //
-    // Thus, set the segments to their correct value, one more time, as a fix.
-    //
-	// todo 是由什么东西导致的必须要修复?
-    ShvVmxCleanup(KGDT64_R3_DATA | RPL_MASK, KGDT64_R3_CMTEB | RPL_MASK);
-
-    //
-    // Wait for all DPCs to synchronize at this point
-    //
-    KeSignalCallDpcSynchronize(SystemArgument2);
-
-    //
-    // Mark the DPC as being complete
-    //
-    KeSignalCallDpcDone(SystemArgument1);
-}
-
-VOID
 ShvOsUnprepareProcessor (
     _In_ PSHV_VP_DATA VpData
     )
@@ -205,22 +155,6 @@ ShvOsGetPhysicalAddress (
     return MmGetPhysicalAddress(BaseAddress).QuadPart;
 }
 
-VOID
-ShvOsRunCallbackOnProcessors (
-    _In_ PSHV_CPU_CALLBACK Routine,
-    _In_opt_ PVOID Context
-    )
-{
-    SHV_DPC_CONTEXT dpcContext;
-
-    //
-    // Wrap the internal routine and context under a Windows DPC
-    //
-    dpcContext.Routine = Routine;
-    dpcContext.Context = Context;
-    KeGenericCallDpc(ShvOsDpcRoutine, &dpcContext);
-}
-
 
 
 NTSTATUS
@@ -247,6 +181,8 @@ UtilForEachProcessor(NTSTATUS(*callback_routine)(void*), void* context) {
 
         // Execute callback
         status = callback_routine(context);
+
+        ShvVmxCleanup(KGDT64_R3_DATA | RPL_MASK, KGDT64_R3_CMTEB | RPL_MASK);
 
         KeRevertToUserGroupAffinityThread(&previous_affinity);
         if (!NT_SUCCESS(status)) {
@@ -290,7 +226,7 @@ DriverUnload (
 {
     UNREFERENCED_PARAMETER(DriverObject);
 	
-
+    
     //
     // Attempt to exit VMX root mode on all logical processors. This will
     // broadcast an interrupt which will execute the callback routine in
@@ -299,8 +235,8 @@ DriverUnload (
     // Note that if SHV is not loaded on any of the LPs, this routine will not
     // perform any work, but will not fail in any way.
     //
-    ShvOsRunCallbackOnProcessors(ShvVpUnloadCallback, NULL);
-
+    UtilForEachProcessor(ShvVpUnloadCallback, NULL);
+	
     //
     // Indicate unload
     //
