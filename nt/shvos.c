@@ -233,6 +233,43 @@ ShvOsRunCallbackOnProcessors (
     KeGenericCallDpc(ShvOsDpcRoutine, &dpcContext);
 }
 
+
+
+NTSTATUS
+UtilForEachProcessor(NTSTATUS(*callback_routine)(void*), void* context) {
+    PAGED_CODE()
+
+        const auto number_of_processors =
+        KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
+    for (ULONG processor_index = 0; processor_index < number_of_processors;
+        processor_index++) {
+        PROCESSOR_NUMBER processor_number = {0};
+        auto status =
+            KeGetProcessorNumberFromIndex(processor_index, &processor_number);
+        if (!NT_SUCCESS(status)) {
+            return status;
+        }
+
+        // Switch the current processor
+        GROUP_AFFINITY affinity = {0};
+        affinity.Group = processor_number.Group;
+        affinity.Mask = 1ull << processor_number.Number;
+        GROUP_AFFINITY previous_affinity = {0};
+        KeSetSystemGroupAffinityThread(&affinity, &previous_affinity);
+
+        // Execute callback
+        status = callback_routine(context);
+
+        KeRevertToUserGroupAffinityThread(&previous_affinity);
+        if (!NT_SUCCESS(status)) {
+            return status;
+        }
+    }
+    return STATUS_SUCCESS;
+}
+
+
+
 // 还原寄存器
 VOID
 ShvOsRestoreContext(
@@ -310,7 +347,7 @@ DriverEntry (
     callbackContext.FailureStatus = SHV_STATUS_SUCCESS;
     callbackContext.FailedCpu = -1;
     callbackContext.InitCount = 0;
-    ShvOsRunCallbackOnProcessors(ShvVpLoadCallback, &callbackContext);
+    UtilForEachProcessor(ShvVpLoadCallback, &callbackContext);
 
 	// todo 查询初始化的cpu数量与机器的cpu数量是否相等
     //
