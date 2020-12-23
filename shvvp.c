@@ -103,7 +103,7 @@ ShvVpInitialize (
 {
     INT32 status = 0;
 
-
+    
 	// todo ±£´æÌØÊâ¼Ä´æÆ÷
     // Read the special control registers for this processor
     // Note: KeSaveStateForHibernate(&Data->HostState) can be used as a Windows

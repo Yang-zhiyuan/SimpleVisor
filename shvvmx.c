@@ -286,9 +286,7 @@ ShvVmxEnterRootModeOnVp (
 
 VOID
 ShvVmxSetupVmcsForVp (
-    _In_ PSHV_VP_DATA VpData,
-    _In_ void* guest_rsp,
-    _In_ void* guest_rip
+    _In_ PSHV_VP_DATA VpData
     )
 {
     PSHV_SPECIAL_REGISTERS state = &VpData->SpecialRegisters;   // 在ShvCaptureSpecialRegisters函数内赋值
@@ -514,8 +512,8 @@ ShvVmxSetupVmcsForVp (
 	// todo 因为VpData的ShvStackLimit栈大小中CONTEXT在一个联合中, 所以, 减掉context大小就是为了数据不被破坏
     //__vmx_vmwrite(GUEST_RSP, (uintptr_t)VpData->ShvStackLimit + KERNEL_STACK_SIZE - sizeof(CONTEXT));
     //__vmx_vmwrite(GUEST_RIP, (uintptr_t)ShvVpRestoreAfterLaunch);
-    __vmx_vmwrite(GUEST_RSP, guest_rsp);
-    __vmx_vmwrite(GUEST_RIP, guest_rip);
+    __vmx_vmwrite(GUEST_RSP, context->Rsp);
+    __vmx_vmwrite(GUEST_RIP, context->Rip);
     __vmx_vmwrite(GUEST_RFLAGS, context->EFlags);
 
     //
@@ -620,7 +618,9 @@ ShvVmxLaunchOnVp (
     //
     // Initialize the VMCS, both guest and host state.
     //
-    ShvVmxSetupVmcsForVp(VpData, guest_rsp, guest_rip);
+    VpData->ContextFrame.Rsp = guest_rsp;
+    VpData->ContextFrame.Rip = guest_rip;
+    ShvVmxSetupVmcsForVp(VpData);
 
 	// todo 函数内部执行完__vmx_vmlaunch后, 系统就进入guest模式了, 这个函数恢复了之前guest的状态
     //
