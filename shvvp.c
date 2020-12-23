@@ -251,68 +251,34 @@ ShvVpLoadCallback (
     // Detect if the hardware appears to support VMX root mode to start.
     // No attempts are made to enable this if it is lacking or disabled.
     //
-    if (!ShvVmxProbe())
+    if (ShvVmxProbe())
     {
-        status = SHV_STATUS_NOT_AVAILABLE;
-        goto Failure;
+        // todo 为当前cpu分配内存
+        vpData = ShvVpAllocateData(1);
+        if (vpData)
+        {
+            vpData->SystemDirectoryTableBase = Context->Cr3;
+
+            // todo 初始化vt(VMXON, VMCS填充, VMLAUNCH)
+            status = ShvVpInitialize(vpData);
+            if (status == SHV_STATUS_SUCCESS)
+            {
+                // todo 通过cpuid指令来判断是否已经安装我们自己的vt, 应该判断vt是否已经安装, 如果有其他vt安装就返回失败
+            	// todo 这里已经修改为通过CPUID.1.VEXE标志位来判断了
+                if (ShvIsOurHypervisorPresent())
+                {
+                    _InterlockedIncrement((volatile long*)&Context->InitCount);
+                    return;
+                }
+                else { status = SHV_STATUS_NOT_PRESENT; }
+            }
+        }
+        else { status = SHV_STATUS_NO_RESOURCES; }
     }
+    else { status = SHV_STATUS_NOT_AVAILABLE; }
 
-    // todo 为每个cpu申请需要的非分页内存
-    //
-    // Allocate the per-VP data for this logical processor
-    //
-    vpData = ShvVpAllocateData(1);
-    if (vpData == NULL)
-    {
-        status = SHV_STATUS_NO_RESOURCES;
-        goto Failure;
-    }
 
-    //
-    // First, capture the value of the PML4 for the SYSTEM process, so that all
-    // virtual processors, regardless of which process the current LP has
-    // interrupted, can share the correct kernel address space.
-    //
-    vpData->SystemDirectoryTableBase = Context->Cr3;
-
-	// todo 初始化vt(VMXON, VMCS填充, VMLAUNCH)
-    //
-    // Initialize the virtual processor
-    //
-    status = ShvVpInitialize(vpData);
-    if (status != SHV_STATUS_SUCCESS)
-    {
-        //
-        // Bail out, free the allocated per-processor data
-        //
-        goto Failure;
-    }
-
-	// todo 通过cpuid指令来判断是否已经安装我们自己的vt, 应该判断vt是否已经安装, 如果有其他vt安装就返回失败
-    // todo 这里已经修改为通过CPUID.1.VEXE标志位来判断了
-    //
-    // Our hypervisor should now be seen as present on this LP, as the SHV
-    // correctly handles CPUID ECX features register.
-    //
-    if (ShvIsOurHypervisorPresent() == FALSE)
-    {
-        //
-        // Free the per-processor data
-        //
-        status = SHV_STATUS_NOT_PRESENT;
-        goto Failure;
-    }
-
-    //
-    // This CPU is hyperjacked!
-    //
-    _InterlockedIncrement((volatile long*)&Context->InitCount);
-    return;
-
-Failure:
-    //
-    // Return failure
-    //
+	
     if (vpData != NULL)
     {
         ShvVpFreeData(vpData, 1);
