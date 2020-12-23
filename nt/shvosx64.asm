@@ -88,4 +88,79 @@ include ksamd64.inc
         ret                         ; Restore RIP
     LEAF_END ShvOsRestoreContext2, _TEXT$00
 
+
+    ; Saves all general purpose registers to the stack
+PUSHAQ MACRO
+    push    rax
+    push    rcx
+    push    rdx
+    push    rbx
+    push    -1      ; dummy for rsp
+    push    rbp
+    push    rsi
+    push    rdi
+    push    r8
+    push    r9
+    push    r10
+    push    r11
+    push    r12
+    push    r13
+    push    r14
+    push    r15
+ENDM
+
+; Loads all general purpose registers from the stack
+POPAQ MACRO
+    pop     r15
+    pop     r14
+    pop     r13
+    pop     r12
+    pop     r11
+    pop     r10
+    pop     r9
+    pop     r8
+    pop     rdi
+    pop     rsi
+    pop     rbp
+    add     rsp, 8    ; dummy for rsp
+    pop     rbx
+    pop     rdx
+    pop     rcx
+    pop     rax
+ENDM
+
+    ; guest∑µªÿµÿ÷∑
+    .code
+
+    extern ShvVmxLaunchOnVp:proc;
+
+    asm_vmx_launch PROC
+
+    ;int 3
+    pushfq
+    PUSHAQ
+
+    mov r8, guest_run
+    mov rdx, rsp
+
+    sub rsp, 20h
+    call ShvVmxLaunchOnVp       ; vpdata, rsp, rip
+    add rsp, 20h
+
+    POPAQ
+    popfq
+    xor rax, rax
+    ret
+
+guest_run:
+    
+    nop
+    POPAQ
+    popfq
+    xor rax, rax
+    inc rax
+    ret
+
+    asm_vmx_launch ENDP
+
     end

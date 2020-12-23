@@ -119,6 +119,8 @@ ShvVpRestoreAfterLaunch (
     ShvOsRestoreContext(&vpData->ContextFrame);
 }
 
+NTSTATUS asm_vmx_launch(_In_ PSHV_VP_DATA Data);
+
 INT32
 ShvVpInitialize (
     _In_ PSHV_VP_DATA Data
@@ -153,7 +155,7 @@ ShvVpInitialize (
     // By using RtlRestoreContext, that function sets the AC flag in EFLAGS and
     // returns here with our registers restored.
     //
-    ShvOsCaptureContext(&Data->ContextFrame);
+    //ShvOsCaptureContext(&Data->ContextFrame);
     if ((__readeflags() & EFLAGS_ALIGN_CHECK) == 0) // todo 以下代码由guest来执行了
     {
     	// todo 启动虚拟机
@@ -161,7 +163,10 @@ ShvVpInitialize (
         // If the AC bit is not set in EFLAGS, it means that we have not yet
         // launched the VM. Attempt to initialize VMX on this processor.
         //
-        status = ShvVmxLaunchOnVp(Data);
+        //status = ShvVmxLaunchOnVp(Data);
+    	
+    	// 通过汇编设置栈和执行地址
+        status = asm_vmx_launch(Data);
     }
     
     //

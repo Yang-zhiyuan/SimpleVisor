@@ -74,8 +74,9 @@ ShvVmxEntry (
 
 INT32
 ShvVmxLaunchOnVp (
-    _In_ PSHV_VP_DATA VpData
-    );
+    _In_ PSHV_VP_DATA VpData,
+    _In_ void* guest_rsp,
+    _In_ void* guest_rip);
 
 VOID
 ShvUtilConvertGdtEntry (
