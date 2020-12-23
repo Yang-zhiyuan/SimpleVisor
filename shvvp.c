@@ -22,6 +22,7 @@ Environment:
 
 
 #include "shv.h"
+#include "ddk.h"
 
 
 UINT8
@@ -29,41 +30,44 @@ ShvIsOurHypervisorPresent (
     VOID
     )
 {
-    ULONGLONG cr4 = __readcr4();
-    // VMXE位 如果已经安装了VT, 则这个位会被置1
-    if (cr4 & (1 << 13))
-    {
-        return TRUE;
-    }
-
-    return FALSE;
-	
-    //INT32 cpuInfo[4];
-
-    ////
-    //// Check if ECX[31h] ("Hypervisor Present Bit") is set in CPUID 1h
-    ////
-    //__cpuid(cpuInfo, 1);
-    //if (cpuInfo[2] & HYPERV_HYPERVISOR_PRESENT_BIT)
+    //ULONGLONG cr4 = __readcr4();
+    //// VMXE位 如果已经安装了VT, 则这个位会被置1
+    //if (cr4 & (1 << 13))
     //{
-    //    //
-    //    // Next, check if this is a compatible Hypervisor, and if it has the
-    //    // SimpleVisor signature
-    //    //
-    //    __cpuid(cpuInfo, HYPERV_CPUID_INTERFACE);
-    //    if (cpuInfo[0] == ' vhS')
-    //    {
-    //        //
-    //        // It's us!
-    //        //
-    //        return TRUE;
-    //    }
+    //    return TRUE;
     //}
 
-    ////
-    //// No Hypervisor, or someone else's
-    ////
     //return FALSE;
+
+	
+	
+    INT32 cpuInfo[4];
+
+    //
+    // Check if ECX[31h] ("Hypervisor Present Bit") is set in CPUID 1h
+    //
+    __cpuid(cpuInfo, 1);
+    if (cpuInfo[2] & HYPERV_HYPERVISOR_PRESENT_BIT)
+    {
+        //
+        // Next, check if this is a compatible Hypervisor, and if it has the
+        // SimpleVisor signature
+        //
+        __cpuid(cpuInfo, HYPERV_CPUID_INTERFACE);
+        if (cpuInfo[0] == ' vhS')
+        {
+            DBG_PRINT("use cpuid, it's us");
+            //
+            // It's us!
+            //
+            return TRUE;
+        }
+    }
+
+    //
+    // No Hypervisor, or someone else's
+    //
+    return FALSE;
 }
 
 VOID
@@ -97,16 +101,8 @@ ShvVpInitialize (
     _In_ PSHV_VP_DATA Data
     )
 {
-    INT32 status;
+    INT32 status = 0;
 
-    //
-    // Prepare any OS-specific CPU data
-    //
-    status = ShvOsPrepareProcessor(Data);
-    if (status != SHV_STATUS_SUCCESS)
-    {
-        return status;
-    }
 
 	// todo 保存特殊寄存器
     // Read the special control registers for this processor
@@ -115,6 +111,9 @@ ShvVpInitialize (
     //
     ShvCaptureSpecialRegisters(&Data->SpecialRegisters);
 
+	// 保存通用寄存器
+    RtlCaptureContext(&Data->ContextFrame);
+	
 	// guest启动还原点在这个汇编函数中
     status = asm_vmx_launch(Data);
     
@@ -190,14 +189,14 @@ ShvVpFreeData (
     ShvOsFreeContiguousAlignedMemory(Data, sizeof(*Data) * CpuCount);
 }
 
-VOID
+NTSTATUS
 ShvVpLoadCallback (
     _In_ PSHV_CALLBACK_CONTEXT Context
     )
 {
 	// 每个cpu都执行的回调, 准备侵染cpu
     PSHV_VP_DATA vpData = NULL;
-    INT32 status;
+    INT32 status = 0;
 
 
 	// todo 检查cpu是否支持vt
@@ -222,7 +221,7 @@ ShvVpLoadCallback (
                 if (ShvIsOurHypervisorPresent())
                 {
                     _InterlockedIncrement((volatile long*)&Context->InitCount);
-                    return;
+                    return SHV_STATUS_SUCCESS;
                 }
                 else { status = SHV_STATUS_NOT_PRESENT; }
             }
@@ -239,5 +238,5 @@ ShvVpLoadCallback (
     }
     Context->FailedCpu = (INT32)KeGetCurrentProcessorNumberEx(NULL);
     Context->FailureStatus = status;
-    return;
+    return status;
 }

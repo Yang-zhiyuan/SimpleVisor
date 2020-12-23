@@ -149,16 +149,14 @@ ENDM
 
     POPAQ
     popfq
-    xor rax, rax
     ret
 
 guest_run:
-    
+    ;int 3
     nop
     POPAQ
     popfq
     xor rax, rax
-    inc rax
     ret
 
     asm_vmx_launch ENDP

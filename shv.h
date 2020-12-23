@@ -59,7 +59,7 @@ typedef struct _SHV_CALLBACK_CONTEXT
 //SHV_CPU_CALLBACK ShvVpLoadCallback;
 //SHV_CPU_CALLBACK ShvVpUnloadCallback;
 
-VOID
+NTSTATUS
 ShvVpLoadCallback(
     _In_ PSHV_CALLBACK_CONTEXT Context);
 VOID
@@ -135,11 +135,6 @@ ShvOsCaptureContext (
 
 VOID
 ShvOsUnprepareProcessor (
-    _In_ PSHV_VP_DATA VpData
-    );
-
-INT32
-ShvOsPrepareProcessor (
     _In_ PSHV_VP_DATA VpData
     );
 
