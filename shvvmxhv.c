@@ -40,7 +40,7 @@ ShvVmxResume (
 
 uintptr_t
 FORCEINLINE
-ShvVmxRead (
+vmx_read (
     _In_ UINT32 VmcsFieldId
     )
 {
@@ -55,7 +55,7 @@ ShvVmxRead (
 }
 
 INT32
-ShvVmxLaunch (
+vmx_launch (
     VOID
     )
 {
@@ -70,7 +70,7 @@ ShvVmxLaunch (
     // If we got here, either VMCS setup failed in some way, or the launch
     // did not proceed as planned.
     //
-    failureCode = (INT32)ShvVmxRead(VM_INSTRUCTION_ERROR);
+    failureCode = (INT32)vmx_read(VM_INSTRUCTION_ERROR);
     __vmx_off();
 
     //
@@ -109,7 +109,7 @@ ShvVmxHandleCpuid (
     //
     if ((VpState->VpRegs->Rax == 0x41414141) &&
         (VpState->VpRegs->Rcx == 0x42424242) &&
-        ((ShvVmxRead(GUEST_CS_SELECTOR) & RPL_MASK) == DPL_SYSTEM))
+        ((vmx_read(GUEST_CS_SELECTOR) & RPL_MASK) == DPL_SYSTEM))
     {
         VpState->ExitVm = TRUE;
         return;
@@ -223,7 +223,7 @@ ShvVmxHandleExit (
     // caused the exit. Since we are not doing any special handling or changing
     // of execution, this can be done for any exit reason.
     //
-    VpState->GuestRip += ShvVmxRead(VM_EXIT_INSTRUCTION_LEN);
+    VpState->GuestRip += vmx_read(VM_EXIT_INSTRUCTION_LEN);
     __vmx_vmwrite(GUEST_RIP, VpState->GuestRip);
 }
 
@@ -233,8 +233,6 @@ ShvVmxEntryHandler (
     _In_ PCONTEXT Context
     )
 {
-
-	
     SHV_VP_STATE guestContext;
     PSHV_VP_DATA vpData;
 
@@ -256,10 +254,10 @@ ShvVmxEntryHandler (
     // of the general purpose registers come from the context structure that we
     // captured on our own with RtlCaptureContext in the assembly entrypoint.
     //
-    guestContext.GuestEFlags = ShvVmxRead(GUEST_RFLAGS);
-    guestContext.GuestRip = ShvVmxRead(GUEST_RIP);
-    guestContext.GuestRsp = ShvVmxRead(GUEST_RSP);
-    guestContext.ExitReason = ShvVmxRead(VM_EXIT_REASON) & 0xFFFF;
+    guestContext.GuestEFlags = vmx_read(GUEST_RFLAGS);
+    guestContext.GuestRip = vmx_read(GUEST_RIP);
+    guestContext.GuestRsp = vmx_read(GUEST_RSP);
+    guestContext.ExitReason = vmx_read(VM_EXIT_REASON) & 0xFFFF;
     guestContext.VpRegs = Context;
     guestContext.ExitVm = FALSE;
 
@@ -298,7 +296,7 @@ ShvVmxEntryHandler (
         // correct value of the "guest" CR3, so that the currently executing
         // process continues to run with its expected address space mappings.
         //
-        __writecr3(ShvVmxRead(GUEST_CR3));
+        __writecr3(vmx_read(GUEST_CR3));
 
         //
         // Finally, restore the stack, instruction pointer and EFLAGS to the

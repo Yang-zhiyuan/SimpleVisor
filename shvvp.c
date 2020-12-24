@@ -196,8 +196,7 @@ ShvVpLoadCallback (
             status = ShvVpInitialize(vpData);
             if (status == SHV_STATUS_SUCCESS)
             {
-                // todo 通过cpuid指令来判断是否已经安装我们自己的vt, 应该判断vt是否已经安装, 如果有其他vt安装就返回失败
-            	// todo 这里已经修改为通过CPUID.1.VEXE标志位来判断了
+                // 验证vt是否安装成功, 使用cpuid指令测试
                 if (ShvIsOurHypervisorPresent())
                 {
                     _InterlockedIncrement((volatile long*)&Context->InitCount);

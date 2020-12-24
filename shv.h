@@ -87,13 +87,8 @@ ShvUtilAdjustMsr (
     _In_ UINT32 DesiredValue
     );
 
-PSHV_VP_DATA
-ShvVpAllocateData (
-    _In_ UINT32 CpuCount
-    );
-
 INT32
-ShvVmxLaunch (
+vmx_launch (
     VOID
     );
 
@@ -124,20 +119,6 @@ ShvOsUnprepareProcessor (
     _In_ PSHV_VP_DATA VpData
     );
 
-INT32
-ShvOsGetActiveProcessorCount (
-    VOID
-    );
-
-INT32
-ShvOsGetCurrentProcessorNumber (
-    VOID
-    );
-
-VOID*
-ShvOsAllocateContigousAlignedMemory (
-    _In_ size_t Size
-    );
 
 UINT64
 ShvOsGetPhysicalAddress (

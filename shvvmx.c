@@ -622,5 +622,5 @@ ShvVmxLaunchOnVp (
     // processor to jump to ShvVpRestoreAfterLaunch on success, or return
     // back to the caller on failure.
     //
-    return ShvVmxLaunch();
+    return vmx_launch();
 }

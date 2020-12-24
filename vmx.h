@@ -566,6 +566,7 @@ typedef struct _VMX_EPTP
         UINT64 AsUlonglong;
     };
 } VMX_EPTP, *PVMX_EPTP;
+static_assert(sizeof(VMX_EPTP) == sizeof(UINT64), "EPTP Size Mismatch");
 
 typedef struct _VMX_EPML4E
 {
@@ -588,6 +589,7 @@ typedef struct _VMX_EPML4E
         UINT64 AsUlonglong;
     };
 } VMX_EPML4E, *PVMX_EPML4E;
+static_assert(sizeof(VMX_EPML4E) == sizeof(UINT64), "EPML4E Size Mismatch");
 
 typedef struct _VMX_HUGE_PDPTE
 {
@@ -614,6 +616,7 @@ typedef struct _VMX_HUGE_PDPTE
         UINT64 AsUlonglong;
     };
 } VMX_HUGE_PDPTE, *PVMX_HUGE_PDPTE;
+static_assert(sizeof(VMX_HUGE_PDPTE) == sizeof(UINT64), "sizeof(VMX_HUGE_PDPTE) != sizeof(UINT64)");
 
 typedef struct _VMX_PDPTE
 {
@@ -636,6 +639,7 @@ typedef struct _VMX_PDPTE
         UINT64 AsUlonglong;
     };
 } VMX_PDPTE, *PVMX_PDPTE;
+static_assert(sizeof(VMX_PDPTE) == sizeof(UINT64), "EPDPTE Size Mismatch");
 
 typedef struct _VMX_LARGE_PDE
 {
@@ -662,10 +666,10 @@ typedef struct _VMX_LARGE_PDE
         UINT64 AsUlonglong;
     };
 } VMX_LARGE_PDE, *PVMX_LARGE_PDE;
+static_assert(sizeof(VMX_LARGE_PDE) == sizeof(UINT64), "sizeof(VMX_LARGE_PDE) != sizeof(UINT64)");
 
-static_assert(sizeof(VMX_EPTP) == sizeof(UINT64), "EPTP Size Mismatch");
-static_assert(sizeof(VMX_EPML4E) == sizeof(UINT64), "EPML4E Size Mismatch");
-static_assert(sizeof(VMX_PDPTE) == sizeof(UINT64), "EPDPTE Size Mismatch");
+
+
 
 #define PML4E_ENTRY_COUNT   512
 #define PDPTE_ENTRY_COUNT   512
