@@ -20,12 +20,14 @@ Environment:
 
 --*/
 
-#include <intrin.h>
+#pragma warning(disable:4201)
+#pragma warning(disable:4214)
+
 #include <ntifs.h>
-#include <stdarg.h>
-#include "../ddk.h"
-#include "../shv.h"
-#include "..\shv_x.h"
+#include <intrin.h>
+#include "ddk.h"
+#include "shv.h"
+#include "shv_x.h"
 #pragma warning(disable:4221)
 #pragma warning(disable:4204)
 
@@ -97,7 +99,8 @@ ShvOsUnprepareProcessor (
     // eventually crash the system. Since we know what the original state
     // of the GDTR and IDTR was, simply restore it now.
     //
-    __lgdt(&VpData->SpecialRegisters.Gdtr.Limit);
+    //__lgdt(&VpData->SpecialRegisters.Gdtr.Limit);
+    _lgdt(&VpData->SpecialRegisters.Gdtr.Limit);
     __lidt(&VpData->SpecialRegisters.Idtr.Limit);
 }
 

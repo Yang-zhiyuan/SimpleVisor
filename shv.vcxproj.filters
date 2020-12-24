@@ -7,6 +7,7 @@
     <ClCompile Include="shvutil.c">
       <Filter>util</Filter>
     </ClCompile>
+    <ClCompile Include="shvos.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shv.h" />
@@ -20,5 +21,8 @@
     <Filter Include="util">
       <UniqueIdentifier>{7e1fb27d-0270-4b7a-a0a8-ffd9a7d1512e}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shvosx64.asm" />
   </ItemGroup>
 </Project>

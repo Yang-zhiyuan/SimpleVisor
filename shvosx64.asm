@@ -38,11 +38,6 @@ include ksamd64.inc
         mov     fs, dx              ; set FS to parameter 2
         ret                         ; return
     LEAF_END ShvVmxCleanup, _TEXT$00
-
-    LEAF_ENTRY __lgdt, _TEXT$00
-        lgdt    fword ptr [rcx]     ; load the GDTR with the value in parameter 1
-        ret                         ; return
-    LEAF_END __lgdt, _TEXT$00
     
     LEAF_ENTRY ShvOsRestoreContext2, _TEXT$00
         movaps  xmm0, CxXmm0[rcx]   ; CxXXXX这种应该是一个汇编宏, 宏内部计算了CONTEXT的偏移

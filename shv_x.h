@@ -104,11 +104,6 @@ _str (
     _In_ UINT16* Tr
     );
 
-VOID
-__lgdt (
-    _In_ VOID* Gdtr
-    );
-
 INT32
 ShvLoad (
     VOID

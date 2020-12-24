@@ -86,7 +86,7 @@ ShvCaptureSpecialRegisters (
     SpecialRegisters->KernelDr7 = __readdr(7);
     _sgdt(&SpecialRegisters->Gdtr.Limit);
     __sidt(&SpecialRegisters->Idtr.Limit);
-
+    
     //
     // Use OS-specific functions to get these two
     //
