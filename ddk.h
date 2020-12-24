@@ -1,5 +1,4 @@
 #pragma once
-#include <ntifs.h>
 
 #define DBG_PRINT(format, ...) DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, ("[YZY]" format), __VA_ARGS__)
 

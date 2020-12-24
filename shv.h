@@ -24,12 +24,10 @@ Environment:
 #pragma warning(disable:4201)
 #pragma warning(disable:4214)
 
-#ifndef __BASE_H__
 #include <basetsd.h>
-#endif
 #define _INC_MALLOC
-#include <intrin.h>
 #include <ntifs.h>
+#include <intrin.h>
 #include "shv_x.h"
 
 
@@ -120,25 +118,6 @@ ShvOsUnprepareProcessor (
     );
 
 
-UINT64
-ShvOsGetPhysicalAddress (
-    _In_ VOID* BaseAddress
-    );
-
-#ifndef __BASE_H__
-VOID
-ShvOsDebugPrint (
-    _In_ const char* Format,
-    ...
-    );
-#else
-VOID
-ShvOsDebugPrintWide (
-    _In_ const CHAR16* Format,
-    ...
-    );
-#define ShvOsDebugPrint(format, ...) ShvOsDebugPrintWide(_CRT_WIDE(format), __VA_ARGS__)
-#endif
 
 extern PSHV_VP_DATA* ShvGlobalData;
 

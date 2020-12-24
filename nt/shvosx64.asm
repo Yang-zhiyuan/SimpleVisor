@@ -153,7 +153,6 @@ include ksamd64.inc
     ret
 
 guest_run:                  ; guest»Ö¸´Ö´ÐÐµã
-    ;int 3
     nop
     POPAQ
     popfq

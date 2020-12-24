@@ -128,7 +128,7 @@ ShvVmxEptInitialize (
     VpData->Epml4[0].Read = 1;
     VpData->Epml4[0].Write = 1;
     VpData->Epml4[0].Execute = 1;
-    VpData->Epml4[0].PageFrameNumber = ShvOsGetPhysicalAddress(&VpData->Epdpt) / PAGE_SIZE;
+    VpData->Epml4[0].PageFrameNumber = MmGetPhysicalAddress(&VpData->Epdpt).QuadPart / PAGE_SIZE;
 
     //
     // Fill out a RWX PDPTE
@@ -145,7 +145,7 @@ ShvVmxEptInitialize (
         //
         // Set the page frame number of the PDE table
         //
-        VpData->Epdpt[i].PageFrameNumber = ShvOsGetPhysicalAddress(&VpData->Epde[i][0]) / PAGE_SIZE;
+        VpData->Epdpt[i].PageFrameNumber = MmGetPhysicalAddress(&VpData->Epde[i][0]).QuadPart / PAGE_SIZE;
     }
 
     //
@@ -227,10 +227,10 @@ ShvVmxEnterRootModeOnVp (
     //
     // Store the physical addresses of all per-LP structures allocated
     //
-    VpData->VmxOnPhysicalAddress = ShvOsGetPhysicalAddress(&VpData->VmxOn);
-    VpData->VmcsPhysicalAddress = ShvOsGetPhysicalAddress(&VpData->Vmcs);
-    VpData->MsrBitmapPhysicalAddress = ShvOsGetPhysicalAddress(VpData->MsrBitmap);
-    VpData->EptPml4PhysicalAddress = ShvOsGetPhysicalAddress(&VpData->Epml4);
+    VpData->VmxOnPhysicalAddress = MmGetPhysicalAddress(&VpData->VmxOn).QuadPart;
+    VpData->VmcsPhysicalAddress = MmGetPhysicalAddress(&VpData->Vmcs).QuadPart;
+    VpData->MsrBitmapPhysicalAddress = MmGetPhysicalAddress(VpData->MsrBitmap).QuadPart;
+    VpData->EptPml4PhysicalAddress = MmGetPhysicalAddress(&VpData->Epml4).QuadPart;
 
     // todo 暴力置位, 强行设置cr0和cr4, 直接把VMX需要的位从msr中拿出来, 然后设置到了相应的寄存器
     //
@@ -523,8 +523,8 @@ ShvVmxSetupVmcsForVp (
     // the ones that RtlCaptureContext will perform.
     //
     C_ASSERT((KERNEL_STACK_SIZE - sizeof(CONTEXT)) % 16 == 0);
-	// todo 栈地址 - 栈大小 = 设置的是高地址, 栈是从高地址向低地址写入
-    __vmx_vmwrite(HOST_RSP, (uintptr_t)VpData->ShvStackLimit + KERNEL_STACK_SIZE - sizeof(CONTEXT));
+	// 栈从高地址向低地址写入
+    __vmx_vmwrite(HOST_RSP, (uintptr_t)VpData->ShvStackLimit + KERNEL_STACK_SIZE);
     __vmx_vmwrite(HOST_RIP, (uintptr_t)ShvVmxEntry);
 }
 

@@ -101,17 +101,6 @@ ShvOsUnprepareProcessor (
     __lidt(&VpData->SpecialRegisters.Idtr.Limit);
 }
 
-ULONGLONG
-ShvOsGetPhysicalAddress (
-    _In_ PVOID BaseAddress
-    )
-{
-    //
-    // Let the memory manager convert it
-    //
-    return MmGetPhysicalAddress(BaseAddress).QuadPart;
-}
-
 
 
 NTSTATUS
