@@ -129,10 +129,6 @@ ShvOsRestoreContext (
     _In_ PCONTEXT ContextRecord
     );
 
-VOID
-ShvOsCaptureContext (
-    _In_ PCONTEXT ContextRecord
-    );
 
 VOID
 ShvOsUnprepareProcessor (

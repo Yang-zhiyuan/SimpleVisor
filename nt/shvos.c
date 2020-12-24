@@ -203,20 +203,6 @@ ShvOsRestoreContext(
     ShvOsRestoreContext2(ContextRecord, NULL);
 }
 
-// 获取当前寄存器
-VOID
-ShvOsCaptureContext (
-    _In_ PCONTEXT ContextRecord
-    )
-{
-	// todo 如果是无优化编译, 这里的rip会导致vm卡死
-    
-    //
-    // Windows provides a nice OS function to do this
-    //
-    RtlCaptureContext(ContextRecord);
-}
-
 
 
 VOID

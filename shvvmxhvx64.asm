@@ -23,14 +23,15 @@
     .code
 
     extern ShvVmxEntryHandler:proc
-    extern ShvOsCaptureContext:proc
+    extern RtlCaptureContext:proc
 
     ShvVmxEntry PROC
     ; ±£´ærcx¼Ä´æÆ÷µ½¶ÑÕ»
+    
     push    rcx                 ; save the RCX register, which we spill below
     lea     rcx, [rsp+8h]       ; store the context in the stack, bias for
                                 ; the return address and the push we just did.
-    call    ShvOsCaptureContext ; save the current register state.
+    call    RtlCaptureContext   ; save the current register state.
                                 ; note that this is a specially written function
                                 ; which has the following key characteristics:
                                 ;   1) it does not taint the value of RCX
