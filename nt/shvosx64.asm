@@ -135,16 +135,17 @@ ENDM
     extern ShvVmxLaunchOnVp:proc;
 
     asm_vmx_launch PROC
-
-    ;int 3
     pushfq
     PUSHAQ
-
-    mov r8, guest_run
-    mov rdx, rsp
+    
+    mov CxRsp[r8], rsp      ; rsp
+    mov rax, guest_run      
+    mov CxRip[r8], rax      ; rip
+    mov rax, rcx            ; ShvVmxLaunchOnVp address
 
     sub rsp, 20h
-    call ShvVmxLaunchOnVp       ; vpdata, rsp, rip
+    mov rcx, rdx            ; vpData
+    call rax
     add rsp, 20h
 
     POPAQ

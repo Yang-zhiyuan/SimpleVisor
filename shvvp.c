@@ -94,7 +94,7 @@ ShvCaptureSpecialRegisters (
     _sldt(&SpecialRegisters->Ldtr);
 }
 
-NTSTATUS asm_vmx_launch(_In_ PSHV_VP_DATA Data);
+NTSTATUS asm_vmx_launch(_In_ INT32 (*ShvVmxLaunchOnVp)(_In_ PSHV_VP_DATA),  _In_ PSHV_VP_DATA, _Inout_ PCONTEXT);
 
 INT32
 ShvVpInitialize (
@@ -113,11 +113,11 @@ ShvVpInitialize (
 
 	// 保存通用寄存器
     RtlCaptureContext(&Data->ContextFrame);
-	
-	// guest启动还原点在这个汇编函数中
-    status = asm_vmx_launch(Data); // inside call ShvVmxLaunchOnVp
-	
     
+	// guest启动还原点在这个汇编函数中
+	// 函数内设置了guest的rsp和rip
+    status = asm_vmx_launch(ShvVmxLaunchOnVp, Data, &Data->ContextFrame);
+	
     //
     // If we got here, the hypervisor is running :-)
     //
@@ -149,22 +149,10 @@ ShvVpUnloadCallback (
     {
         __analysis_assume((cpuInfo[0] != 0) && (cpuInfo[1] != 0));
         vpData = (PSHV_VP_DATA)((UINT64)cpuInfo[0] << 32 | (UINT32)cpuInfo[1]);
-        ShvOsFreeContiguousAlignedMemory(vpData, sizeof(*vpData));
+        MmFreeContiguousMemory(vpData);
     }
 
     return STATUS_SUCCESS;
-}
-
-VOID
-ShvVpFreeData (
-    _In_ PSHV_VP_DATA Data,
-    _In_ UINT32 CpuCount
-    )
-{
-    //
-    // Free the contiguous chunk of RAM
-    //
-    ShvOsFreeContiguousAlignedMemory(Data, sizeof(*Data) * CpuCount);
 }
 
 NTSTATUS
@@ -201,7 +189,10 @@ ShvVpLoadCallback (
         	
             vpData->SystemDirectoryTableBase = Context->Cr3;
 
-            // todo 初始化vt(VMXON, VMCS填充, VMLAUNCH)
+        	// 1.保存特殊和通用寄存器
+            // 2.设置guest的rsp和rip
+            // 3.填充MTRR, EPT, VMXON, VMCS区域
+            // 4.启动虚拟机 vmlaunch
             status = ShvVpInitialize(vpData);
             if (status == SHV_STATUS_SUCCESS)
             {
@@ -223,7 +214,7 @@ ShvVpLoadCallback (
 	
     if (vpData != NULL)
     {
-        ShvVpFreeData(vpData, 1);
+        MmFreeContiguousMemory(vpData);
     }
     Context->FailedCpu = (INT32)KeGetCurrentProcessorNumberEx(NULL);
     Context->FailureStatus = status;

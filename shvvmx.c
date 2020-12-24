@@ -573,9 +573,7 @@ ShvVmxProbe (
 
 INT32
 ShvVmxLaunchOnVp (
-    _In_ PSHV_VP_DATA VpData,
-    _In_ void* guest_rsp,
-    _In_ void* guest_rip)
+    _In_ PSHV_VP_DATA VpData)
 {
     UINT32 i;
 
@@ -615,8 +613,6 @@ ShvVmxLaunchOnVp (
     //
     // Initialize the VMCS, both guest and host state.
     //
-    VpData->ContextFrame.Rsp = (ULONG64)guest_rsp;
-    VpData->ContextFrame.Rip = (ULONG64)guest_rip;
     ShvVmxSetupVmcsForVp(VpData);
 
 	// todo 函数内部执行完__vmx_vmlaunch后, 系统就进入guest模式了, 这个函数恢复了之前guest的状态

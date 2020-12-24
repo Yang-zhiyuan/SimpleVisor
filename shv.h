@@ -72,9 +72,7 @@ ShvVmxEntry (
 
 INT32
 ShvVmxLaunchOnVp (
-    _In_ PSHV_VP_DATA VpData,
-    _In_ void* guest_rsp,
-    _In_ void* guest_rip);
+    _In_ PSHV_VP_DATA VpData);
 
 VOID
 ShvUtilConvertGdtEntry (
@@ -91,12 +89,6 @@ ShvUtilAdjustMsr (
 
 PSHV_VP_DATA
 ShvVpAllocateData (
-    _In_ UINT32 CpuCount
-    );
-
-VOID
-ShvVpFreeData  (
-    _In_ PSHV_VP_DATA Data,
     _In_ UINT32 CpuCount
     );
 
@@ -140,12 +132,6 @@ ShvOsGetActiveProcessorCount (
 INT32
 ShvOsGetCurrentProcessorNumber (
     VOID
-    );
-
-VOID
-ShvOsFreeContiguousAlignedMemory (
-    _In_ VOID* BaseAddress,
-    _In_ size_t Size
     );
 
 VOID*

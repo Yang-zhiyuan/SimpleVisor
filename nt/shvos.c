@@ -101,19 +101,6 @@ ShvOsUnprepareProcessor (
     __lidt(&VpData->SpecialRegisters.Idtr.Limit);
 }
 
-VOID
-ShvOsFreeContiguousAlignedMemory (
-    _In_ PVOID BaseAddress,
-    _In_ size_t Size
-    )
-{
-    UNREFERENCED_PARAMETER(Size);
-    //
-    // Free the memory
-    //
-    MmFreeContiguousMemory(BaseAddress);
-}
-
 ULONGLONG
 ShvOsGetPhysicalAddress (
     _In_ PVOID BaseAddress
