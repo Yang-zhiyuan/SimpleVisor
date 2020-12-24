@@ -124,7 +124,7 @@ typedef struct _MTRR_CAPABILITIES
         UINT64 AsUlonglong;
     };
 } MTRR_CAPABILITIES, *PMTRR_CAPABILITIES;
-C_ASSERT(sizeof(MTRR_CAPABILITIES) == sizeof(UINT64));
+static_assert(sizeof(MTRR_CAPABILITIES) == sizeof(UINT64), "sizeof(MTRR_CAPABILITIES) != sizeof(UINT64)");
 
 typedef struct _MTRR_VARIABLE_BASE
 {
@@ -140,7 +140,7 @@ typedef struct _MTRR_VARIABLE_BASE
         UINT64 AsUlonglong;
     };
 } MTRR_VARIABLE_BASE, *PMTRR_VARIABLE_BASE;
-C_ASSERT(sizeof(MTRR_VARIABLE_BASE) == sizeof(UINT64));
+static_assert(sizeof(MTRR_VARIABLE_BASE) == sizeof(UINT64), "sizeof(MTRR_VARIABLE_BASE) != sizeof(UINT64)");
 
 typedef struct _MTRR_VARIABLE_MASK
 {
@@ -156,7 +156,7 @@ typedef struct _MTRR_VARIABLE_MASK
         UINT64 AsUlonglong;
     };
 } MTRR_VARIABLE_MASK, *PMTRR_VARIABLE_MASK;
-C_ASSERT(sizeof(MTRR_VARIABLE_MASK) == sizeof(UINT64));
+static_assert(sizeof(MTRR_VARIABLE_MASK) == sizeof(UINT64), "sizeof(MTRR_VARIABLE_MASK) != sizeof(UINT64)");
 
 #define CPU_BASED_VIRTUAL_INTR_PENDING          0x00000004
 #define CPU_BASED_USE_TSC_OFFSETING             0x00000008

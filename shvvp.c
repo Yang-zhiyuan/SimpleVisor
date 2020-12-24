@@ -155,31 +155,6 @@ ShvVpUnloadCallback (
     return STATUS_SUCCESS;
 }
 
-PSHV_VP_DATA
-ShvVpAllocateData (
-    _In_ UINT32 CpuCount
-    )
-{
-    PSHV_VP_DATA data;
-
-    //
-    // Allocate a contiguous chunk of RAM to back this allocation
-    //
-    data = ShvOsAllocateContigousAlignedMemory(sizeof(*data) * CpuCount);
-    if (data != NULL)
-    {
-        //
-        // Zero out the entire data region
-        //
-        __stosq((UINT64*)data, 0, (sizeof(*data) / sizeof(UINT64)) * CpuCount);
-    }
-
-    //
-    // Return what is hopefully a valid pointer, otherwise NULL.
-    //
-    return data;
-}
-
 VOID
 ShvVpFreeData (
     _In_ PSHV_VP_DATA Data,
@@ -201,7 +176,6 @@ ShvVpLoadCallback (
     PSHV_VP_DATA vpData = NULL;
     INT32 status = 0;
 
-
 	// todo 检查cpu是否支持vt
     //
     // Detect if the hardware appears to support VMX root mode to start.
@@ -210,9 +184,21 @@ ShvVpLoadCallback (
     if (ShvVmxProbe())
     {
         // todo 为当前cpu分配内存
-        vpData = ShvVpAllocateData(1);
+        PHYSICAL_ADDRESS lowest, highest;
+        lowest.QuadPart = 0;
+        highest.QuadPart = lowest.QuadPart - 1;
+
+    	// 申请读写属性内存
+        vpData = MmAllocateContiguousNodeMemory(sizeof(*vpData), lowest, highest,
+            lowest,
+            PAGE_READWRITE,
+            KeGetCurrentNodeNumber());
+    	
         if (vpData)
         {
+            __stosq((UINT64*)vpData, 0, sizeof(*vpData) / sizeof(UINT64));
+        	
+        	
             vpData->SystemDirectoryTableBase = Context->Cr3;
 
             // todo 初始化vt(VMXON, VMCS填充, VMLAUNCH)

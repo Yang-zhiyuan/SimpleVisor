@@ -44,12 +44,6 @@ ShvVmxCleanup (
     _In_ UINT16 Teb
     );
 
-typedef struct _SHV_DPC_CONTEXT
-{
-    PSHV_CPU_CALLBACK Routine;
-    struct _SHV_CALLBACK_CONTEXT* Context;
-} SHV_DPC_CONTEXT, *PSHV_DPC_CONTEXT;
-
 #define KGDT64_R3_DATA      0x28
 #define KGDT64_R3_CMTEB     0x50
 
@@ -113,35 +107,11 @@ ShvOsFreeContiguousAlignedMemory (
     _In_ size_t Size
     )
 {
+    UNREFERENCED_PARAMETER(Size);
     //
     // Free the memory
     //
     MmFreeContiguousMemory(BaseAddress);
-}
-
-PVOID
-ShvOsAllocateContigousAlignedMemory (
-    _In_ SIZE_T Size
-    )
-{
-    PHYSICAL_ADDRESS lowest, highest;
-
-    //
-    // The entire address range is OK for this allocation
-    //
-    lowest.QuadPart = 0;
-    highest.QuadPart = lowest.QuadPart - 1;
-
-    //
-    // Allocate a contiguous chunk of RAM to back this allocation and make sure
-    // that it is RW only, instead of RWX, by using the new Windows 8 API.
-    //
-    return MmAllocateContiguousNodeMemory(Size,
-                                          lowest,
-                                          highest,
-                                          lowest,
-                                          PAGE_READWRITE,
-                                          KeGetCurrentNodeNumber());
 }
 
 ULONGLONG
@@ -163,7 +133,7 @@ UtilForEachProcessor(NTSTATUS(*callback_routine)(void*), void* context) {
 
         const auto number_of_processors =
         KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
-    for (ULONG processor_index = 0; processor_index < number_of_processors;
+    for (auto processor_index = 0; processor_index < number_of_processors;
         processor_index++) {
         PROCESSOR_NUMBER processor_number = {0};
         auto status =
@@ -182,7 +152,7 @@ UtilForEachProcessor(NTSTATUS(*callback_routine)(void*), void* context) {
         // Execute callback
         status = callback_routine(context);
 
-        ShvVmxCleanup(KGDT64_R3_DATA | RPL_MASK, KGDT64_R3_CMTEB | RPL_MASK);
+        //ShvVmxCleanup(KGDT64_R3_DATA | RPL_MASK, KGDT64_R3_CMTEB | RPL_MASK);
 
         KeRevertToUserGroupAffinityThread(&previous_affinity);
         if (!NT_SUCCESS(status)) {
@@ -236,14 +206,13 @@ DriverEntry (
     _In_ PUNICODE_STRING RegistryPath
     )
 {
+    UNREFERENCED_PARAMETER(RegistryPath);
+
+    DriverObject->DriverUnload = DriverUnload;
+	
+	
     NTSTATUS status;
 
-    ////
-    //// Make the driver (and SHV itself) unloadable
-    ////
-    DriverObject->DriverUnload = DriverUnload;
-
-	
     // todo 通过KeGenericCallDpc设置每个cpu指令
     SHV_CALLBACK_CONTEXT callbackContext;
     //
@@ -260,12 +229,6 @@ DriverEntry (
     UtilForEachProcessor(ShvVpLoadCallback, &callbackContext);
 
 	// todo 查询初始化的cpu数量与机器的cpu数量是否相等
-    //
-    // Check if all LPs are now hypervised. Return the failure code of at least
-    // one of them. 
-    //
-    // Note that each VP is responsible for freeing its VP data on failure.
-    //
     if (callbackContext.InitCount != (INT32)KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS))
     {
         DBG_PRINT("The SHV failed to initialize (0x%lX) Failed CPU: %d\n", 

@@ -36,7 +36,6 @@ Environment:
 #define DECLSPEC_ALIGN(x)   __declspec(align(x))
 #define DECLSPEC_NORETURN   __declspec(noreturn)
 #define FORCEINLINE         __forceinline
-#define C_ASSERT(x)         static_assert(x, "Error")
 
 typedef struct _SHV_VP_STATE
 {
@@ -56,8 +55,6 @@ typedef struct _SHV_CALLBACK_CONTEXT
     INT32 FailureStatus;
 } SHV_CALLBACK_CONTEXT, *PSHV_CALLBACK_CONTEXT;
 
-//SHV_CPU_CALLBACK ShvVpLoadCallback;
-//SHV_CPU_CALLBACK ShvVpUnloadCallback;
 
 NTSTATUS
 ShvVpLoadCallback(

@@ -35,12 +35,6 @@ Environment:
 
 struct _SHV_CALLBACK_CONTEXT;
 
-typedef
-void
-SHV_CPU_CALLBACK (
-    _In_ struct _SHV_CALLBACK_CONTEXT* Context
-    );
-typedef SHV_CPU_CALLBACK *PSHV_CPU_CALLBACK;
 
 typedef struct _SHV_SPECIAL_REGISTERS
 {
@@ -93,7 +87,7 @@ typedef struct _SHV_VP_DATA
     DECLSPEC_ALIGN(PAGE_SIZE) VMX_VMCS Vmcs;
 } SHV_VP_DATA, *PSHV_VP_DATA;
 
-C_ASSERT(sizeof(SHV_VP_DATA) == (KERNEL_STACK_SIZE + (512 + 5) * PAGE_SIZE));
+static_assert(sizeof(SHV_VP_DATA) == (KERNEL_STACK_SIZE + (512 + 5) * PAGE_SIZE), "error");
 
 VOID
 _sldt (
