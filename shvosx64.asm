@@ -127,7 +127,7 @@ include ksamd64.inc
     
 .code
 
-    extern ShvVmxLaunchOnVp:proc;
+    extern launch_vm:proc;
 
     asm_vmx_launch PROC
     pushfq
@@ -136,7 +136,7 @@ include ksamd64.inc
     mov CxRsp[r8], rsp      ; rsp
     mov rax, guest_run      
     mov CxRip[r8], rax      ; rip
-    mov rax, rcx            ; ShvVmxLaunchOnVp address
+    mov rax, rcx            ; launch_vm address
 
     sub rsp, 20h
     mov rcx, rdx            ; vpData

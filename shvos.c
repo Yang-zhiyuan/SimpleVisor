@@ -20,9 +20,6 @@ Environment:
 
 --*/
 
-#pragma warning(disable:4201)
-#pragma warning(disable:4214)
-
 #include <ntifs.h>
 #include <intrin.h>
 #include "ddk.h"
@@ -205,7 +202,7 @@ DriverEntry (
     callbackContext.FailureStatus = SHV_STATUS_SUCCESS;
     callbackContext.FailedCpu = -1;
     callbackContext.InitCount = 0;
-    UtilForEachProcessor(ShvVpLoadCallback, &callbackContext);
+    UtilForEachProcessor(setup, &callbackContext);
 
 	// todo 查询初始化的cpu数量与机器的cpu数量是否相等
     if (callbackContext.InitCount != (INT32)KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS))

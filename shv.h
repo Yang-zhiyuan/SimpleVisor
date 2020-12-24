@@ -55,7 +55,7 @@ typedef struct _SHV_CALLBACK_CONTEXT
 
 
 NTSTATUS
-ShvVpLoadCallback(
+setup(
     _In_ PSHV_CALLBACK_CONTEXT Context);
 
 NTSTATUS
@@ -69,7 +69,7 @@ ShvVmxEntry (
     );
 
 INT32
-ShvVmxLaunchOnVp (
+launch_vm (
     _In_ PSHV_VP_DATA VpData);
 
 VOID
@@ -91,7 +91,7 @@ vmx_launch (
     );
 
 UINT8
-ShvVmxProbe (
+check_vt_support (
     VOID
     );
 
@@ -116,8 +116,4 @@ VOID
 ShvOsUnprepareProcessor (
     _In_ PSHV_VP_DATA VpData
     );
-
-
-
-extern PSHV_VP_DATA* ShvGlobalData;
 

@@ -38,7 +38,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="shvos.c" />
-    <ClCompile Include="shvutil.c" />
     <ClCompile Include="shvvmx.c" />
     <ClCompile Include="shvvmxhv.c" />
     <ClCompile Include="shvvp.c" />

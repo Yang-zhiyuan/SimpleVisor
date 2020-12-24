@@ -4,9 +4,6 @@
     <ClCompile Include="shvvmx.c" />
     <ClCompile Include="shvvmxhv.c" />
     <ClCompile Include="shvvp.c" />
-    <ClCompile Include="shvutil.c">
-      <Filter>util</Filter>
-    </ClCompile>
     <ClCompile Include="shvos.c" />
   </ItemGroup>
   <ItemGroup>

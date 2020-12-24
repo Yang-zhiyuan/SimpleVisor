@@ -86,30 +86,11 @@ typedef struct _SHV_VP_DATA
     DECLSPEC_ALIGN(PAGE_SIZE) VMX_VMCS VmxOn;
     DECLSPEC_ALIGN(PAGE_SIZE) VMX_VMCS Vmcs;
 } SHV_VP_DATA, *PSHV_VP_DATA;
+// todo 内存申请的地方, 不应该一下干这么大的页, 随着系统运行, 物理内存的熵会越来越大
 
 static_assert(sizeof(SHV_VP_DATA) == (KERNEL_STACK_SIZE + (512 + 5) * PAGE_SIZE), "error");
 
-VOID
-_sldt (
-    _In_ UINT16* Ldtr
-    );
 
-VOID
-_ltr (
-    _In_ UINT16 Tr
-    );
-
-VOID
-_str (
-    _In_ UINT16* Tr
-    );
-
-INT32
-ShvLoad (
-    VOID
-    );
-
-VOID
-ShvUnload (
-    VOID
-    );
+void _sldt (_In_ UINT16* Ldtr);
+void _ltr (_In_ UINT16 Tr);
+void _str (_In_ UINT16* Tr);

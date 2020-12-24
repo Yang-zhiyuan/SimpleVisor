@@ -25,22 +25,8 @@ Environment:
 #include "ddk.h"
 
 
-UINT8
-ShvIsOurHypervisorPresent (
-    VOID
-    )
+UINT8 is_our_hypervisor_present(void)
 {
-    //ULONGLONG cr4 = __readcr4();
-    //// VMXE位 如果已经安装了VT, 则这个位会被置1
-    //if (cr4 & (1 << 13))
-    //{
-    //    return TRUE;
-    //}
-
-    //return FALSE;
-
-	
-	
     INT32 cpuInfo[4];
 
     //
@@ -71,7 +57,7 @@ ShvIsOurHypervisorPresent (
 }
 
 VOID
-ShvCaptureSpecialRegisters (
+capture_special_registers (
     _In_ PSHV_SPECIAL_REGISTERS SpecialRegisters
     )
 {
@@ -97,7 +83,7 @@ ShvCaptureSpecialRegisters (
 NTSTATUS asm_vmx_launch(_In_ INT32 (*ShvVmxLaunchOnVp)(_In_ PSHV_VP_DATA),  _In_ PSHV_VP_DATA, _Inout_ PCONTEXT);
 
 INT32
-ShvVpInitialize (
+initialize (
     _In_ PSHV_VP_DATA Data
     )
 {
@@ -109,14 +95,14 @@ ShvVpInitialize (
     // Note: KeSaveStateForHibernate(&Data->HostState) can be used as a Windows
     // specific undocumented function that can also get this data.
     //
-    ShvCaptureSpecialRegisters(&Data->SpecialRegisters);
+    capture_special_registers(&Data->SpecialRegisters);
 
 	// 保存通用寄存器
     RtlCaptureContext(&Data->ContextFrame);
     
 	// guest启动还原点在这个汇编函数中
 	// 函数内设置了guest的rsp和rip
-    status = asm_vmx_launch(ShvVmxLaunchOnVp, Data, &Data->ContextFrame);
+    status = asm_vmx_launch(launch_vm, Data, &Data->ContextFrame);
 	
     //
     // If we got here, the hypervisor is running :-)
@@ -156,7 +142,7 @@ ShvVpUnloadCallback (
 }
 
 NTSTATUS
-ShvVpLoadCallback (
+setup (
     _In_ PSHV_CALLBACK_CONTEXT Context
     )
 {
@@ -169,7 +155,7 @@ ShvVpLoadCallback (
     // Detect if the hardware appears to support VMX root mode to start.
     // No attempts are made to enable this if it is lacking or disabled.
     //
-    if (ShvVmxProbe())
+    if (check_vt_support())
     {
         // todo 为当前cpu分配内存
         PHYSICAL_ADDRESS lowest, highest;
@@ -186,18 +172,17 @@ ShvVpLoadCallback (
         {
             __stosq((UINT64*)vpData, 0, sizeof(*vpData) / sizeof(UINT64));
         	
-        	
             vpData->SystemDirectoryTableBase = Context->Cr3;
 
         	// 1.保存特殊和通用寄存器
             // 2.设置guest的rsp和rip
             // 3.填充MTRR, EPT, VMXON, VMCS区域
             // 4.启动虚拟机 vmlaunch
-            status = ShvVpInitialize(vpData);
+            status = initialize(vpData);
             if (status == SHV_STATUS_SUCCESS)
             {
                 // 验证vt是否安装成功, 使用cpuid指令测试
-                if (ShvIsOurHypervisorPresent())
+                if (is_our_hypervisor_present())
                 {
                     _InterlockedIncrement((volatile long*)&Context->InitCount);
                     return SHV_STATUS_SUCCESS;
