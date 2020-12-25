@@ -525,7 +525,7 @@ ShvVmxSetupVmcsForVp (
     C_ASSERT((KERNEL_STACK_SIZE - sizeof(CONTEXT)) % 16 == 0);
 	// 栈从高地址向低地址写入
     __vmx_vmwrite(HOST_RSP, (uintptr_t)VpData->ShvStackLimit + KERNEL_STACK_SIZE);
-    __vmx_vmwrite(HOST_RIP, (uintptr_t)ShvVmxEntry);
+    __vmx_vmwrite(HOST_RIP, (uintptr_t)vmm_entry);
 }
 
 UINT8

@@ -45,15 +45,9 @@
   <ItemGroup>
     <ClInclude Include="ddk.h" />
     <ClInclude Include="shv.h" />
-    <ClInclude Include="shv_x.h" />
     <ClInclude Include="vmx.h" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="shvvmxhvx64.asm" />
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="shvosx64.asm">
-      <FileType>Document</FileType>
-    </MASM>
+    <MASM Include="x64.asm" />
   </ItemGroup>
 </Project>

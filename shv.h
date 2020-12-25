@@ -28,7 +28,7 @@ Environment:
 #define _INC_MALLOC
 #include <ntifs.h>
 #include <intrin.h>
-#include "shv_x.h"
+#include "vmx.h"
 
 
 #define DECLSPEC_ALIGN(x)   __declspec(align(x))
@@ -63,10 +63,7 @@ ShvVpUnloadCallback(
     _In_ PSHV_CALLBACK_CONTEXT Context);
 
 
-VOID
-ShvVmxEntry (
-    VOID
-    );
+VOID vmm_entry(VOID);
 
 INT32
 launch_vm (

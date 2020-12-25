@@ -8,18 +8,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shv.h" />
-    <ClInclude Include="shv_x.h" />
     <ClInclude Include="vmx.h" />
+    <ClInclude Include="ddk.h" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="shvvmxhvx64.asm" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="util">
-      <UniqueIdentifier>{7e1fb27d-0270-4b7a-a0a8-ffd9a7d1512e}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shvosx64.asm" />
+    <MASM Include="x64.asm" />
   </ItemGroup>
 </Project>

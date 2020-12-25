@@ -24,7 +24,6 @@ Environment:
 #include <intrin.h>
 #include "ddk.h"
 #include "shv.h"
-#include "shv_x.h"
 #pragma warning(disable:4221)
 #pragma warning(disable:4204)
 
