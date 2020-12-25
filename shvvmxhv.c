@@ -24,7 +24,7 @@ Environment:
 
 DECLSPEC_NORETURN
 VOID
-ShvVmxResume (
+VmxResume (
     VOID
     )
 {
@@ -80,7 +80,7 @@ vmx_launch (
 }
 
 VOID
-ShvVmxHandleInvd (
+VmxHandleInvd (
     VOID
     )
 {
@@ -95,7 +95,7 @@ ShvVmxHandleInvd (
 }
 
 VOID
-ShvVmxHandleCpuid (
+VmxHandleCpuid (
     _In_ PSHV_VP_STATE VpState
     )
 {
@@ -150,7 +150,7 @@ ShvVmxHandleCpuid (
 }
 
 VOID
-ShvVmxHandleXsetbv (
+VmxHandleXsetbv (
     _In_ PSHV_VP_STATE VpState
     )
 {
@@ -164,7 +164,7 @@ ShvVmxHandleXsetbv (
 }
 
 VOID
-ShvVmxHandleVmx (
+VmxHandleVmx (
     _In_ PSHV_VP_STATE VpState
     )
 {
@@ -180,7 +180,7 @@ ShvVmxHandleVmx (
 }
 
 VOID
-ShvVmxHandleExit (
+VmxHandleExit (
     _In_ PSHV_VP_STATE VpState
     )
 {
@@ -194,13 +194,13 @@ ShvVmxHandleExit (
     switch (VpState->ExitReason)
     {
     case EXIT_REASON_CPUID:
-        ShvVmxHandleCpuid(VpState);
+        VmxHandleCpuid(VpState);
         break;
     case EXIT_REASON_INVD:
-        ShvVmxHandleInvd();
+        VmxHandleInvd();
         break;
     case EXIT_REASON_XSETBV:
-        ShvVmxHandleXsetbv(VpState);
+        VmxHandleXsetbv(VpState);
         break;
     case EXIT_REASON_VMCALL:
     case EXIT_REASON_VMCLEAR:
@@ -212,7 +212,7 @@ ShvVmxHandleExit (
     case EXIT_REASON_VMWRITE:
     case EXIT_REASON_VMXOFF:
     case EXIT_REASON_VMXON:
-        ShvVmxHandleVmx(VpState);
+        VmxHandleVmx(VpState);
         break;
     default:
         break;
@@ -229,7 +229,7 @@ ShvVmxHandleExit (
 
 DECLSPEC_NORETURN
 VOID
-ShvVmxEntryHandler (
+VmxEntryHandler (
     _In_ PCONTEXT Context
     )
 {
@@ -264,7 +264,7 @@ ShvVmxEntryHandler (
     //
     // Call the generic handler
     //
-    ShvVmxHandleExit(&guestContext);
+    VmxHandleExit(&guestContext);
 
 
     //
@@ -285,7 +285,7 @@ ShvVmxEntryHandler (
         //
         // Perform any OS-specific CPU uninitialization work
         //
-        ShvOsUnprepareProcessor(vpData);
+        //OsUnprepareProcessor(vpData);     // 应该是不需要恢复idt和gdt的
 
         //
         // Our callback routine may have interrupted an arbitrary user process,
@@ -330,11 +330,11 @@ ShvVmxEntryHandler (
         // needed as RtlRestoreContext will fix all the GPRs, and what we just
         // did to RSP will take care of the rest.
         //
-        Context->Rip = (UINT64)ShvVmxResume;
+        Context->Rip = (UINT64)VmxResume;
     }
 
     //
-    // Restore the context to either ShvVmxResume, in which case the CPU's VMX
+    // Restore the context to either VmxResume, in which case the CPU's VMX
     // facility will do the "true" return back to the VM (but without restoring
     // GPRs, which is why we must do it here), or to the original guest's RIP,
     // which we use in case an exit was requested. In this case VMX must now be

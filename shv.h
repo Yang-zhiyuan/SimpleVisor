@@ -70,14 +70,14 @@ launch_vm (
     _In_ PSHV_VP_DATA VpData);
 
 VOID
-ShvUtilConvertGdtEntry (
+UtilConvertGdtEntry (
     _In_ VOID* GdtBase,
     _In_ UINT16 Offset,
     _Out_ PVMX_GDTENTRY64 VmxGdtEntry
     );
 
 UINT32
-ShvUtilAdjustMsr (
+UtilAdjustMsr (
     _In_ LARGE_INTEGER ControlValue,
     _In_ UINT32 DesiredValue
     );
@@ -93,7 +93,7 @@ check_vt_support (
     );
 
 VOID
-ShvVmxEptInitialize (
+VmxEptInitialize (
     _In_ PSHV_VP_DATA VpData
     );
 
@@ -110,7 +110,7 @@ ShvOsRestoreContext (
 
 
 VOID
-ShvOsUnprepareProcessor (
+OsUnprepareProcessor (
     _In_ PSHV_VP_DATA VpData
     );
 

@@ -23,7 +23,7 @@ Environment:
 #include "shv.h"
 
 VOID
-ShvVmxMtrrInitialize (
+VmxMtrrInitialize (
     _In_ PSHV_VP_DATA VpData
     )
 {
@@ -74,7 +74,7 @@ ShvVmxMtrrInitialize (
 }
 
 UINT32
-ShvVmxMtrrAdjustEffectiveMemoryType (
+VmxMtrrAdjustEffectiveMemoryType (
     _In_ PSHV_VP_DATA VpData,
     _In_ UINT64 LargePageAddress,
     _In_ UINT32 CandidateMemoryType
@@ -114,7 +114,7 @@ ShvVmxMtrrAdjustEffectiveMemoryType (
 }
 
 VOID
-ShvVmxEptInitialize (
+VmxEptInitialize (
     _In_ PSHV_VP_DATA VpData
     )
 {
@@ -167,7 +167,7 @@ ShvVmxEptInitialize (
         for (j = 0; j < PDE_ENTRY_COUNT; j++)
         {
             VpData->Epde[i][j].PageFrameNumber = (i * 512) + j;
-            VpData->Epde[i][j].Type = ShvVmxMtrrAdjustEffectiveMemoryType(VpData,
+            VpData->Epde[i][j].Type = VmxMtrrAdjustEffectiveMemoryType(VpData,
                                                                           VpData->Epde[i][j].PageFrameNumber * _2MB,
                                                                           MTRR_TYPE_WB);
         }
@@ -175,7 +175,7 @@ ShvVmxEptInitialize (
 }
 
 UINT8
-ShvVmxEnterRootModeOnVp (
+VmxEnterRootModeOnVp (
     _In_ PSHV_VP_DATA VpData
     )
 {
@@ -285,7 +285,7 @@ ShvVmxEnterRootModeOnVp (
 }
 
 VOID
-ShvVmxSetupVmcsForVp (
+VmxSetupVmcsForVp (
     _In_ PSHV_VP_DATA VpData
     )
 {
@@ -336,14 +336,14 @@ ShvVmxSetupVmcsForVp (
     //
     // Enable support for RDTSCP and XSAVES/XRESTORES in the guest. Windows 10
     // makes use of both of these instructions if the CPU supports it. By using
-    // ShvUtilAdjustMsr, these options will be ignored if this processor does
+    // UtilAdjustMsr, these options will be ignored if this processor does
     // not actually support the instructions to begin with.
     //
     // Also enable EPT support, for additional performance and ability to trap
     // memory access efficiently.
     //
     __vmx_vmwrite(SECONDARY_VM_EXEC_CONTROL,
-                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_PROCBASED_CTLS2_INDEX],
+                           UtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_PROCBASED_CTLS2_INDEX],
                                             SECONDARY_EXEC_ENABLE_RDTSCP |
                                             SECONDARY_EXEC_ENABLE_INVPCID |
                                             SECONDARY_EXEC_XSAVES |
@@ -351,10 +351,10 @@ ShvVmxSetupVmcsForVp (
 
     //
     // Enable no pin-based options ourselves, but there may be some required by
-    // the processor. Use ShvUtilAdjustMsr to add those in.
+    // the processor. Use UtilAdjustMsr to add those in.
     //
     __vmx_vmwrite(PIN_BASED_VM_EXEC_CONTROL,
-                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_PINBASED_CTLS_INDEX], 0));
+                           UtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_PINBASED_CTLS_INDEX], 0));
 
     //
     // In order for our choice of supporting RDTSCP and XSAVE/RESTORES above to
@@ -362,7 +362,7 @@ ShvVmxSetupVmcsForVp (
     // want to activate the MSR bitmap in order to keep them from being caught.
     //
     __vmx_vmwrite(CPU_BASED_VM_EXEC_CONTROL,
-                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_PROCBASED_CTLS_INDEX],
+                           UtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_PROCBASED_CTLS_INDEX],
                                             CPU_BASED_ACTIVATE_MSR_BITMAP |
                                             CPU_BASED_ACTIVATE_SECONDARY_CONTROLS));
 
@@ -370,20 +370,20 @@ ShvVmxSetupVmcsForVp (
     // Make sure to enter us in x64 mode at all times.
     //
     __vmx_vmwrite(VM_EXIT_CONTROLS,
-                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_EXIT_CTLS_INDEX],
+                           UtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_EXIT_CTLS_INDEX],
                                             VM_EXIT_IA32E_MODE));
 
     //
     // As we exit back into the guest, make sure to exist in x64 mode as well.
     //
     __vmx_vmwrite(VM_ENTRY_CONTROLS,
-                           ShvUtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_ENTRY_CTLS_INDEX],
+                           UtilAdjustMsr(VpData->MsrData[MSR_IA32_VMX_TRUE_ENTRY_CTLS_INDEX],
                                             VM_ENTRY_IA32E_MODE));
 
     //
     // Load the CS Segment (Ring 0 Code)
     //
-    ShvUtilConvertGdtEntry(state->Gdtr.Base, context->SegCs, &vmxGdtEntry);
+    UtilConvertGdtEntry(state->Gdtr.Base, context->SegCs, &vmxGdtEntry);
     __vmx_vmwrite(GUEST_CS_SELECTOR, vmxGdtEntry.Selector);
     __vmx_vmwrite(GUEST_CS_LIMIT, vmxGdtEntry.Limit);
     __vmx_vmwrite(GUEST_CS_AR_BYTES, vmxGdtEntry.AccessRights);
@@ -393,7 +393,7 @@ ShvVmxSetupVmcsForVp (
     //
     // Load the SS Segment (Ring 0 Data)
     //
-    ShvUtilConvertGdtEntry(state->Gdtr.Base, context->SegSs, &vmxGdtEntry);
+    UtilConvertGdtEntry(state->Gdtr.Base, context->SegSs, &vmxGdtEntry);
     __vmx_vmwrite(GUEST_SS_SELECTOR, vmxGdtEntry.Selector);
     __vmx_vmwrite(GUEST_SS_LIMIT, vmxGdtEntry.Limit);
     __vmx_vmwrite(GUEST_SS_AR_BYTES, vmxGdtEntry.AccessRights);
@@ -403,7 +403,7 @@ ShvVmxSetupVmcsForVp (
     //
     // Load the DS Segment (Ring 3 Data)
     //
-    ShvUtilConvertGdtEntry(state->Gdtr.Base, context->SegDs, &vmxGdtEntry);
+    UtilConvertGdtEntry(state->Gdtr.Base, context->SegDs, &vmxGdtEntry);
     __vmx_vmwrite(GUEST_DS_SELECTOR, vmxGdtEntry.Selector);
     __vmx_vmwrite(GUEST_DS_LIMIT, vmxGdtEntry.Limit);
     __vmx_vmwrite(GUEST_DS_AR_BYTES, vmxGdtEntry.AccessRights);
@@ -413,7 +413,7 @@ ShvVmxSetupVmcsForVp (
     //
     // Load the ES Segment (Ring 3 Data)
     //
-    ShvUtilConvertGdtEntry(state->Gdtr.Base, context->SegEs, &vmxGdtEntry);
+    UtilConvertGdtEntry(state->Gdtr.Base, context->SegEs, &vmxGdtEntry);
     __vmx_vmwrite(GUEST_ES_SELECTOR, vmxGdtEntry.Selector);
     __vmx_vmwrite(GUEST_ES_LIMIT, vmxGdtEntry.Limit);
     __vmx_vmwrite(GUEST_ES_AR_BYTES, vmxGdtEntry.AccessRights);
@@ -423,7 +423,7 @@ ShvVmxSetupVmcsForVp (
     //
     // Load the FS Segment (Ring 3 Compatibility-Mode TEB)
     //
-    ShvUtilConvertGdtEntry(state->Gdtr.Base, context->SegFs, &vmxGdtEntry);
+    UtilConvertGdtEntry(state->Gdtr.Base, context->SegFs, &vmxGdtEntry);
     __vmx_vmwrite(GUEST_FS_SELECTOR, vmxGdtEntry.Selector);
     __vmx_vmwrite(GUEST_FS_LIMIT, vmxGdtEntry.Limit);
     __vmx_vmwrite(GUEST_FS_AR_BYTES, vmxGdtEntry.AccessRights);
@@ -434,7 +434,7 @@ ShvVmxSetupVmcsForVp (
     //
     // Load the GS Segment (Ring 3 Data if in Compatibility-Mode, MSR-based in Long Mode)
     //
-    ShvUtilConvertGdtEntry(state->Gdtr.Base, context->SegGs, &vmxGdtEntry);
+    UtilConvertGdtEntry(state->Gdtr.Base, context->SegGs, &vmxGdtEntry);
     __vmx_vmwrite(GUEST_GS_SELECTOR, vmxGdtEntry.Selector);
     __vmx_vmwrite(GUEST_GS_LIMIT, vmxGdtEntry.Limit);
     __vmx_vmwrite(GUEST_GS_AR_BYTES, vmxGdtEntry.AccessRights);
@@ -445,7 +445,7 @@ ShvVmxSetupVmcsForVp (
     //
     // Load the Task Register (Ring 0 TSS)
     //
-    ShvUtilConvertGdtEntry(state->Gdtr.Base, state->Tr, &vmxGdtEntry);
+    UtilConvertGdtEntry(state->Gdtr.Base, state->Tr, &vmxGdtEntry);
     __vmx_vmwrite(GUEST_TR_SELECTOR, vmxGdtEntry.Selector);
     __vmx_vmwrite(GUEST_TR_LIMIT, vmxGdtEntry.Limit);
     __vmx_vmwrite(GUEST_TR_AR_BYTES, vmxGdtEntry.AccessRights);
@@ -456,7 +456,7 @@ ShvVmxSetupVmcsForVp (
     //
     // Load the Local Descriptor Table (Ring 0 LDT on Redstone)
     //
-    ShvUtilConvertGdtEntry(state->Gdtr.Base, state->Ldtr, &vmxGdtEntry);
+    UtilConvertGdtEntry(state->Gdtr.Base, state->Ldtr, &vmxGdtEntry);
     __vmx_vmwrite(GUEST_LDTR_SELECTOR, vmxGdtEntry.Selector);
     __vmx_vmwrite(GUEST_LDTR_LIMIT, vmxGdtEntry.Limit);
     __vmx_vmwrite(GUEST_LDTR_AR_BYTES, vmxGdtEntry.AccessRights);
@@ -590,18 +590,18 @@ launch_vm (
     // Initialize all the MTRR(memory type region register内存类型寄存器)-related MSRs by reading their value and build
     // range structures to describe their settings
     //
-    ShvVmxMtrrInitialize(VpData);
+    VmxMtrrInitialize(VpData);
 
     //
     // Initialize the EPT structures
     //
-    ShvVmxEptInitialize(VpData);
+    VmxEptInitialize(VpData);
 
     // todo 填充vmxon区域
     //
     // Attempt to enter VMX root mode on this processor.
     //
-    if (ShvVmxEnterRootModeOnVp(VpData) == FALSE)
+    if (VmxEnterRootModeOnVp(VpData) == FALSE)
     {
         //
         // We could not enter VMX Root mode
@@ -613,12 +613,12 @@ launch_vm (
     //
     // Initialize the VMCS, both guest and host state.
     //
-    ShvVmxSetupVmcsForVp(VpData);
+    VmxSetupVmcsForVp(VpData);
 
 	// todo 函数内部执行完__vmx_vmlaunch后, 系统就进入guest模式了, 这个函数恢复了之前guest的状态
     //
     // Launch the VMCS, based on the guest data that was loaded into the
-    // various VMCS fields by ShvVmxSetupVmcsForVp. This will cause the
+    // various VMCS fields by VmxSetupVmcsForVp. This will cause the
     // processor to jump to ShvVpRestoreAfterLaunch on success, or return
     // back to the caller on failure.
     //
@@ -626,7 +626,7 @@ launch_vm (
 }
 
 VOID
-ShvUtilConvertGdtEntry(
+UtilConvertGdtEntry(
     _In_ VOID* GdtBase,
     _In_ UINT16 Selector,
     _Out_ PVMX_GDTENTRY64 VmxGdtEntry
@@ -692,7 +692,7 @@ ShvUtilConvertGdtEntry(
 }
 
 UINT32
-ShvUtilAdjustMsr(
+UtilAdjustMsr(
     _In_ LARGE_INTEGER ControlValue,
     _In_ UINT32 DesiredValue
 )

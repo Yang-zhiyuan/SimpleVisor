@@ -139,7 +139,7 @@ guest_run:                  ; guest恢复执行点
 
 
     ; vmm entry point
-    extern ShvVmxEntryHandler:proc
+    extern VmxEntryHandler:proc
     extern RtlCaptureContext:proc
     
     vmm_entry PROC
@@ -156,10 +156,10 @@ guest_run:                  ; guest恢复执行点
                                     ;   1) it does not taint the value of RCX
                                     ;   2) it does not spill any registers, nor
                                     ;      expect home space to be allocated for it
-    jmp     ShvVmxEntryHandler      ; jump to the C code handler. we assume that it
+    jmp     VmxEntryHandler      ; jump to the C code handler. we assume that it
                                     ; compiled with optimizations and does not use
                                     ; home space, which is true of release builds.
-    ; 跳到ShvVmxEntryHandler函数内部后从栈中恢复rcx寄存器
+    ; 跳到VmxEntryHandler函数内部后从栈中恢复rcx寄存器
     vmm_entry ENDP
 
 end

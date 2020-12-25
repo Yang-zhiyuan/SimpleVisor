@@ -83,7 +83,7 @@ ShvOsErrorToError (
 }
 
 VOID
-ShvOsUnprepareProcessor (
+OsUnprepareProcessor (
     _In_ PSHV_VP_DATA VpData
     )
 {
