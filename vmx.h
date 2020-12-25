@@ -701,16 +701,16 @@ struct _SHV_CALLBACK_CONTEXT;
 
 typedef struct _SHV_SPECIAL_REGISTERS
 {
-    UINT64 Cr0;
-    UINT64 Cr3;
-    UINT64 Cr4;
+    UINT64 Cr0;                 // Control register 0
+    UINT64 Cr3;                 // Control register 3
+    UINT64 Cr4;                 // Control register 4
     UINT64 MsrGsBase;
-    UINT16 Tr;
-    UINT16 Ldtr;
+    UINT16 Tr;                  // Task Register
+    UINT16 Ldtr;                // Local Descriptor Table Register
     UINT64 DebugControl;
     UINT64 KernelDr7;
-    KDESCRIPTOR Idtr;
-    KDESCRIPTOR Gdtr;
+    KDESCRIPTOR Idtr;           // Interrupt Descriptor Table Register
+    KDESCRIPTOR Gdtr;           // Global Descriptor Table Register
 } SHV_SPECIAL_REGISTERS, * PSHV_SPECIAL_REGISTERS;
 
 typedef struct _SHV_MTRR_RANGE
@@ -746,15 +746,15 @@ typedef struct _SHV_VP_DATA
     DECLSPEC_ALIGN(PAGE_SIZE) VMX_PDPTE Epdpt[PDPTE_ENTRY_COUNT];
     DECLSPEC_ALIGN(PAGE_SIZE) VMX_LARGE_PDE Epde[PDPTE_ENTRY_COUNT][PDE_ENTRY_COUNT];
 
-    DECLSPEC_ALIGN(PAGE_SIZE) VMX_VMCS VmxOn;
-    DECLSPEC_ALIGN(PAGE_SIZE) VMX_VMCS Vmcs;
+    DECLSPEC_ALIGN(PAGE_SIZE) VMX_VMCS VmxOn;   // size : 0x1000
+    DECLSPEC_ALIGN(PAGE_SIZE) VMX_VMCS Vmcs;    // size : 0x1000
 } SHV_VP_DATA, * PSHV_VP_DATA;
 // todo 内存申请的地方, 不应该一下干这么大的页, 随着系统运行, 物理内存的熵会越来越大
 
 static_assert(sizeof(SHV_VP_DATA) == (KERNEL_STACK_SIZE + (512 + 5) * PAGE_SIZE), "error");
 
 
-void _sldt(_In_ UINT16* Ldtr);
-void _ltr(_In_ UINT16 Tr);
-void _str(_In_ UINT16* Tr);
+void _sldt(_In_ UINT16* Ldtr);  // save ldt
+void _ltr(_In_ UINT16 Tr);      // load tr
+void _str(_In_ UINT16* Tr);     // save tr
 
