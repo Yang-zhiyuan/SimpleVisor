@@ -285,7 +285,7 @@ VmxEntryHandler (
         //
         // Perform any OS-specific CPU uninitialization work
         //
-        //OsUnprepareProcessor(vpData);     // 应该是不需要恢复idt和gdt的
+        OsUnprepareProcessor(vpData);     // 应该是不需要恢复idt和gdt的
 
         //
         // Our callback routine may have interrupted an arbitrary user process,

@@ -31,15 +31,9 @@ Environment:
 DECLSPEC_NORETURN
 VOID
 __cdecl
-ShvOsRestoreContext2 (
+OsRestoreContext2 (
     _In_ PCONTEXT ContextRecord,
     _In_opt_ struct _EXCEPTION_RECORD * ExceptionRecord
-    );
-
-VOID
-ShvVmxCleanup (
-    _In_ UINT16 Data,
-    _In_ UINT16 Teb
     );
 
 #define KGDT64_R3_DATA      0x28
@@ -127,8 +121,6 @@ UtilForEachProcessor(NTSTATUS(*callback_routine)(void*), void* context) {
         // Execute callback
         status = callback_routine(context);
 
-        //ShvVmxCleanup(KGDT64_R3_DATA | RPL_MASK, KGDT64_R3_CMTEB | RPL_MASK);
-
         KeRevertToUserGroupAffinityThread(&previous_affinity);
         if (!NT_SUCCESS(status)) {
             return status;
@@ -145,7 +137,7 @@ ShvOsRestoreContext(
     _In_ PCONTEXT ContextRecord
     )
 {
-    ShvOsRestoreContext2(ContextRecord, NULL);
+    OsRestoreContext2(ContextRecord, NULL);
 }
 
 

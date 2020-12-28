@@ -10,15 +10,8 @@ include ksamd64.inc
         sldt word ptr [rcx]         ; Store LDTR value
         ret                         ; Return
     LEAF_END _sldt, _TEXT$00
-
-    LEAF_ENTRY ShvVmxCleanup, _TEXT$00
-        mov     ds, cx              ; set DS to parameter 1
-        mov     es, cx              ; set ES to parameter 1
-        mov     fs, dx              ; set FS to parameter 2
-        ret                         ; return
-    LEAF_END ShvVmxCleanup, _TEXT$00
     
-    LEAF_ENTRY ShvOsRestoreContext2, _TEXT$00
+    LEAF_ENTRY OsRestoreContext2, _TEXT$00
         movaps  xmm0, CxXmm0[rcx]   ; CxXXXX这种应该是一个汇编宏, 宏内部计算了CONTEXT的偏移
         movaps  xmm1, CxXmm1[rcx]   ;
         movaps  xmm2, CxXmm2[rcx]   ;
@@ -60,7 +53,7 @@ include ksamd64.inc
         push    CxRip[rcx]          ; Push RIP on old stack
         mov     rcx, CxRcx[rcx]     ; Restore RCX since we spilled it
         ret                         ; Restore RIP
-    LEAF_END ShvOsRestoreContext2, _TEXT$00
+    LEAF_END OsRestoreContext2, _TEXT$00
 
 
     ; Saves all general purpose registers to the stack
